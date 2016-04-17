@@ -9,16 +9,24 @@ Actionable code coverage.
 # Gemfile
 gem 'single_cov', group: :test
 
-# spec/spec_helper.rb
-SingleCover.setup :rspec # ... or :minitest
+# test/test_helper.rb ... load before loading rails / minitest / libraries
+require 'single_cov'
+SingleCov.setup :minitest
+require 'minitest/autorun'
 
-# spec/foobar_spec.rb
-SingleCover.covered!
+# test/foobar_test.rb ... add covered! call to every test file
+require_relative '../test_helper'
+SingleCov.covered!
+
+describe "xyz" do ...
 ```
 
 ```Bash
-rspec spec/foobar_spec.rb
-lib/foobar.rb new uncovered lines introduced 2 current vs 0 previous",
+ruby test/foobar_test.rb
+......
+100 runs, 150 assertions, 0 failures
+
+lib/foobar.rb new uncovered lines introduced (2 current vs 0 configured)",
 Uncovered lines:
 lib/foobar.rb:22
 lib/foobar.rb:23
@@ -28,13 +36,13 @@ lib/foobar.rb:23
 
 Prevent addition of new uncovered code, without having to cover all existing code.
 
-```
+```Ruby
 SingleCov.covered! uncovered: 4
 ```
 
 ### Unconventional files
 
-```
+```Ruby
 SingleCov.covered! file: 'scripts/weird_thing.rb'
 ```
 
@@ -42,11 +50,11 @@ SingleCov.covered! file: 'scripts/weird_thing.rb'
  
 Making sure every newly added file has coverage tracking.
 
-```
+```Ruby
 # spec/kitchen_sink_spec.rb
 it "has coverage for all tests" do
   # option :tests to pass custom Dir.glob results 
-  SingleCover.assert_used
+  SingleCov.assert_used
 end
 ```
 
@@ -54,12 +62,12 @@ end
  
 Making sure every newly added file has a corresponding test.
 
-```
+```Ruby
 # spec/kitchen_sink_spec.rb
 it "has coverage for all tests" do
   # option :tests and :files to pass custom Dir.glob results
   # :untested to get it passing with known untested files
-  SingleCover.assert_tested
+  SingleCov.assert_tested
 end
 ```
 
