@@ -123,7 +123,7 @@ describe SingleCov do
       end
 
       it "works with custom files" do
-        SingleCov.assert_used files: []
+        SingleCov.assert_used tests: []
       end
     end
   end

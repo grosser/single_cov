@@ -31,8 +31,8 @@ module SingleCov
       errors.all? { |l| l.end_with?('?') } # ok if we just have warnings
     end
 
-    def assert_used(files: default_tests)
-      bad = files.select do |file|
+    def assert_used(tests: default_tests)
+      bad = tests.select do |file|
         File.read(file) !~ /SingleCov.(not_)?covered\!/
       end
       unless bad.empty?
@@ -190,7 +190,7 @@ module SingleCov
       end
 
       # rails things live in app
-      file_part[0...0] = if file_part =~ /^(?:models|helpers|controllers|mailers|views)\//
+      file_part[0...0] = if file_part =~ /^(?:models|serializers|helpers|controllers|mailers|views)\//
         "app/"
       elsif file_part.start_with?("lib/") # don't add lib twice
         ""
