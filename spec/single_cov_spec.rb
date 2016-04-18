@@ -66,10 +66,17 @@ describe SingleCov do
       end
     end
 
-    it "complains when minitest was loaded before and setup will not work" do
+    it "complains when minitest was started before and setup will not work" do
       change_file("test/a_test.rb", "require 'single_cov'", "require 'single_cov'\nrequire 'minitest/autorun'") do
         result = sh "ruby test/a_test.rb", fail: true
         expect(result).to include "Load minitest after setting up SingleCov"
+      end
+    end
+
+    it "does not complain when minitest was loaded befor setup" do
+      change_file("test/a_test.rb", "require 'single_cov'", "require 'single_cov'\nmodule Minitest;end\n") do
+        result = sh "ruby test/a_test.rb"
+        assert_tests_finished_normally(result)
       end
     end
 

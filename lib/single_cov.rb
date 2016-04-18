@@ -101,7 +101,7 @@ module SingleCov
 
     # we cannot insert our hooks when minitest is already running
     def minitest_should_not_be_running!
-      if defined?(Minitest) && Minitest.class_variable_get(:@@installed_at_exit)
+      if defined?(Minitest) && Minitest.class_variable_defined?(:@@installed_at_exit) && Minitest.class_variable_get(:@@installed_at_exit)
         raise "Load minitest after setting up SingleCov"
       end
     end
