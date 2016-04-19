@@ -1,6 +1,7 @@
 module SingleCov
   COVERAGES = []
   MAX_OUTPUT = 40
+  APP_FOLDERS = ["models", "serializers", "helpers", "controllers", "mailers", "views"]
 
   class << self
     def not_covered!
@@ -190,7 +191,7 @@ module SingleCov
       end
 
       # rails things live in app
-      file_part[0...0] = if file_part =~ /^(?:models|serializers|helpers|controllers|mailers|views)\//
+      file_part[0...0] = if file_part =~ /^(?:#{APP_FOLDERS.map { |f| Regexp.escape(f) }.join('|')})\//
         "app/"
       elsif file_part.start_with?("lib/") # don't add lib twice
         ""
