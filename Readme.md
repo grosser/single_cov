@@ -12,7 +12,6 @@ gem 'single_cov', group: :test
 # spec/spec_helper.rb ... load before loading rails / minitest / libraries
 require 'single_cov'
 SingleCov.setup :rspec
-require 'minitest/autorun'
 
 # spec/foobar_spec.rb ... add covered! call to every test file
 require 'spec_helper'
