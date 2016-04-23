@@ -23,7 +23,7 @@ describe "xyz" do ...
 ```Bash
 rspec spec/foobar_spec.rb
 ......
-100 runs, 150 assertions, 0 failures
+114 example, 0 failures
 
 lib/foobar.rb new uncovered lines introduced (2 current vs 0 configured)",
 Uncovered lines:
