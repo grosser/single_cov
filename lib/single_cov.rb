@@ -62,13 +62,16 @@ module SingleCov
       when :minitest
         minitest_should_not_be_running!
         return if minitest_running_subset_of_tests?
-        start_coverage_recording
-
-        override_at_exit do |status, _exception|
-          exit 1 if status == 0 && !SingleCov.all_covered?(coverage_results)
-        end
+      when :rspec
+        return if rspec_running_subset_of_tests?
       else
         raise "Unsupported framework #{framework.inspect}"
+      end
+
+      start_coverage_recording
+
+      override_at_exit do |status, _exception|
+        exit 1 if status == 0 && !SingleCov.all_covered?(coverage_results)
       end
     end
 
@@ -110,6 +113,10 @@ module SingleCov
     # do not record or verify when only running selected tests since it would be missing data
     def minitest_running_subset_of_tests?
       (ARGV & ['-n', '--name', '-l', '--line']).any?
+    end
+
+    def rspec_running_subset_of_tests?
+      (ARGV & ['-t', '--tag', '-e', '--example']).any? || ARGV.any? { |a| a =~ /\:\d+$/ }
     end
 
     # code stolen from SimpleCov
@@ -179,7 +186,7 @@ module SingleCov
       file = file.dup
 
       # remove project root
-      file.sub!("#{Bundler.root}/", '')
+      file.sub!("#{Dir.pwd}/", '')
 
       # remove caller junk to get nice error messages when something fails
       file.sub!(/\.rb\b.*/, '.rb')

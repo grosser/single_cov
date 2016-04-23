@@ -9,20 +9,20 @@ Actionable code coverage.
 # Gemfile
 gem 'single_cov', group: :test
 
-# test/test_helper.rb ... load before loading rails / minitest / libraries
+# spec/spec_helper.rb ... load before loading rails / minitest / libraries
 require 'single_cov'
-SingleCov.setup :minitest
+SingleCov.setup :rspec
 require 'minitest/autorun'
 
-# test/foobar_test.rb ... add covered! call to every test file
-require_relative '../test_helper'
+# spec/foobar_spec.rb ... add covered! call to every test file
+require 'spec_helper'
 SingleCov.covered!
 
 describe "xyz" do ...
 ```
 
 ```Bash
-ruby test/foobar_test.rb
+rspec spec/foobar_spec.rb
 ......
 100 runs, 150 assertions, 0 failures
 
@@ -30,6 +30,15 @@ lib/foobar.rb new uncovered lines introduced (2 current vs 0 configured)",
 Uncovered lines:
 lib/foobar.rb:22
 lib/foobar.rb:23
+```
+
+### Minitest
+
+Call setup before loading minitest.
+
+```Ruby
+SingleCov.setup :minitest
+require 'minitest/autorun'
 ```
 
 ### Known uncovered

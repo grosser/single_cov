@@ -1,4 +1,4 @@
-require "spec_helper"
+require_relative "spec_helper"
 
 describe SingleCov do
   it "has a VERSION" do
@@ -6,7 +6,7 @@ describe SingleCov do
   end
 
   describe "minitest" do
-    around { |test| Dir.chdir("spec/fixtures/minitest", &test) }
+    around { |test| Dir.chdir("specs/fixtures/minitest", &test) }
 
     it "does not complain when everything is covered" do
       result = sh "ruby test/a_test.rb"
@@ -117,8 +117,48 @@ describe SingleCov do
     end
   end
 
+  describe "rspec" do
+    around { |test| Dir.chdir("specs/fixtures/rspec", &test) }
+
+    it "does not complain when everything is covered" do
+      result = sh "bundle exec rspec spec/a_spec.rb"
+      assert_specs_finished_normally(result)
+      expect(result).to_not include "uncovered"
+    end
+
+    describe "when something is uncovered" do
+      around { |t| change_file("spec/a_spec.rb", "A.new.a", "1", &t) }
+
+      it "complains when something is uncovered" do
+        result = sh "bundle exec rspec spec/a_spec.rb", fail: true
+        assert_specs_finished_normally(result)
+        expect(result).to include "uncovered"
+      end
+
+      it "does not complains when running a subset of tests" do
+        result = sh "bundle exec rspec spec/a_spec.rb:14"
+        assert_specs_finished_normally(result)
+        expect(result).to_not include "uncovered"
+      end
+
+      it "does not complains when running a subset of tests by name" do
+        result = sh "bundle exec rspec spec/a_spec.rb -e 'does a'"
+        assert_specs_finished_normally(result)
+        expect(result).to_not include "uncovered"
+      end
+
+      it "does not complain when tests failed" do
+        change_file("spec/a_spec.rb", "eq 1", "eq 2") do
+          result = sh "bundle exec rspec spec/a_spec.rb", fail: true
+          expect(result).to include "1 example, 1 failure"
+          expect(result).to_not include "uncovered"
+        end
+      end
+    end
+  end
+
   describe ".assert_used" do
-    around { |test| Dir.chdir("spec/fixtures/minitest", &test) }
+    around { |test| Dir.chdir("specs/fixtures/minitest", &test) }
 
     it "work when all tests have SingleCov" do
       SingleCov.assert_used
@@ -145,7 +185,7 @@ describe SingleCov do
   end
 
   describe ".assert_tested" do
-    around { |test| Dir.chdir("spec/fixtures/minitest", &test) }
+    around { |test| Dir.chdir("specs/fixtures/minitest", &test) }
 
     it "work when all files have a test" do
       SingleCov.assert_tested
@@ -223,5 +263,9 @@ describe SingleCov do
 
   def assert_tests_finished_normally(result)
     expect(result).to include "1 runs, 1 assertions, 0 failures"
+  end
+
+  def assert_specs_finished_normally(result)
+    expect(result).to include "1 example, 0 failures"
   end
 end
