@@ -4,6 +4,11 @@ module SingleCov
   APP_FOLDERS = ["models", "serializers", "helpers", "controllers", "mailers", "views"]
 
   class << self
+    # optionally rewrite the file we guessed with a lambda
+    def rewrite(&block)
+      @rewrite = block
+    end
+
     def not_covered!
     end
 
@@ -213,6 +218,8 @@ module SingleCov
 
       # put back the subfolder
       file_part[0...0] = "#{subfolder}/" unless subfolder.empty?
+
+      file_part = @rewrite.call(file_part) if @rewrite
 
       file_part
     end

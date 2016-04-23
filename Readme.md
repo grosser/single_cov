@@ -40,6 +40,12 @@ SingleCov.setup :minitest
 require 'minitest/autorun'
 ```
 
+### Strange file locations
+
+```Ruby
+SingleCov.rewrite { |f| f.sub('lib/unit/', 'app/models/') }
+```
+
 ### Known uncovered
 
 Prevent addition of new uncovered code, without having to cover all existing code.

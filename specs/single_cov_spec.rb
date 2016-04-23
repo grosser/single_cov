@@ -89,6 +89,13 @@ describe SingleCov do
         expect(result).to include "Use `SingleCov.covered file: 'target_file.rb'` to set covered file location."
       end
 
+      it "works with a rewrite" do
+        change_file("test/b_test.rb", "SingleCov.covered!", "SingleCov.rewrite { |f| 'lib/a.rb' }\nSingleCov.covered!") do
+          result = sh "ruby test/b_test.rb"
+          assert_tests_finished_normally(result)
+        end
+      end
+
       it "works with configured file" do
         change_file("test/b_test.rb", "SingleCov.covered!", "SingleCov.covered! file: 'lib/a.rb'") do
           result = sh "ruby test/b_test.rb"
