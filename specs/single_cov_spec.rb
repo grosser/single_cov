@@ -1,15 +1,25 @@
 require_relative "spec_helper"
 
+SingleCov.instance_variable_set(:@root, File.expand_path("../fixtures/minitest", __FILE__))
+
 describe SingleCov do
   it "has a VERSION" do
     expect(SingleCov::VERSION).to match /^[\.\da-z]+$/
   end
 
   describe "minitest" do
+    let(:default_setup) { "SingleCov.setup :minitest, root: root" }
+
     around { |test| Dir.chdir("specs/fixtures/minitest", &test) }
 
     it "does not complain when everything is covered" do
       result = sh "ruby test/a_test.rb"
+      assert_tests_finished_normally(result)
+      expect(result).to_not include "uncovered"
+    end
+
+    it "can run from non-root" do
+      result = sh "cd test && ruby a_test.rb"
       assert_tests_finished_normally(result)
       expect(result).to_not include "uncovered"
     end
@@ -105,7 +115,7 @@ describe SingleCov do
     end
 
     describe "when SimpleCov was loaded after" do
-      around { |t| change_file("test/a_test.rb", "SingleCov.setup :minitest", "SingleCov.setup :minitest\nrequire 'simplecov'\nSimpleCov.start\n", &t) }
+      around { |t| change_file("test/a_test.rb", default_setup, "#{default_setup}\nrequire 'simplecov'\nSimpleCov.start\n", &t) }
 
       it "works" do
         result = sh "ruby test/a_test.rb"
@@ -219,7 +229,7 @@ describe SingleCov do
 
   describe ".file_under_test" do
     def file_under_test(test)
-      SingleCov.send(:file_under_test, "#{Bundler.root}/#{test}:34:in `foobar'")
+      SingleCov.send(:file_under_test, "#{SingleCov.send(:root)}/#{test}:34:in `foobar'")
     end
 
     {

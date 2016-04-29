@@ -19,7 +19,7 @@ module SingleCov
 
     def all_covered?(result)
       errors = COVERAGES.map do |file, expected_uncovered|
-        if coverage = result[File.expand_path(file)]
+        if coverage = result["#{root}/#{file}"]
           uncovered_lines = coverage.each_with_index.map { |c, i| "#{file}:#{i+1}" if c == 0 }.compact
           next if uncovered_lines.size == expected_uncovered
           warn_about_bad_coverage(file, expected_uncovered, uncovered_lines)
@@ -46,7 +46,7 @@ module SingleCov
       end
     end
 
-    def assert_tested(files: Dir['{app,lib}/**/*.rb'], tests: default_tests, untested: [])
+    def assert_tested(files: glob('{app,lib}/**/*.rb'), tests: default_tests, untested: [])
       missing = files - tests.map { |t| file_under_test(t) }
       fixed = untested - missing
       missing -= untested
@@ -58,10 +58,12 @@ module SingleCov
       end
     end
 
-    def setup(framework)
+    def setup(framework, root: nil)
       if defined?(SimpleCov)
         raise "Load SimpleCov after SingleCov"
       end
+
+      @root = root if root
 
       case framework
       when :minitest
@@ -83,7 +85,11 @@ module SingleCov
     private
 
     def default_tests
-      Dir["{test,spec}/**/*_{test,spec}.rb"]
+      glob("{test,spec}/**/*_{test,spec}.rb")
+    end
+
+    def glob(pattern)
+      Dir["#{root}/#{pattern}"].map! { |f| f.sub("#{root}/", '') }
     end
 
     # do not ask for coverage when SimpleCov already does or it conflicts
@@ -148,14 +154,14 @@ module SingleCov
 
     def guess_and_check_covered_file(file)
       if file && file.start_with?("/")
-        raise "Use paths relative to rails root."
+        raise "Use paths relative to root."
       end
 
       if file
-        raise "#{file} does not exist and cannot be covered." unless File.exist?(file)
+        raise "#{file} does not exist and cannot be covered." unless File.exist?("#{root}/#{file}")
       else
         file = file_under_test(caller[1])
-        unless File.exist?(file)
+        unless File.exist?("#{root}/#{file}")
           raise "Tried to guess covered file as #{file}, but it does not exist.\nUse `SingleCov.covered file: 'target_file.rb'` to set covered file location."
         end
       end
@@ -179,7 +185,7 @@ module SingleCov
     end
 
     def warn_about_no_coverage(file)
-      if $LOADED_FEATURES.include?(File.expand_path(file))
+      if $LOADED_FEATURES.include?("#{root}/#{file}")
         # we cannot enforce $LOADED_FEATURES during covered! since it would fail when multiple files are loaded
         "#{file} was expected to be covered, but already loaded before tests started."
       else
@@ -190,11 +196,14 @@ module SingleCov
     def file_under_test(file)
       file = file.dup
 
-      # remove project root
-      file.sub!("#{Dir.pwd}/", '')
-
       # remove caller junk to get nice error messages when something fails
       file.sub!(/\.rb\b.*/, '.rb')
+
+      # resolve all kinds of relativity
+      file = File.expand_path(file)
+
+      # remove project root
+      file.sub!("#{root}/", '')
 
       # preserve subfolders like foobar/test/xxx_test.rb -> foobar/lib/xxx_test.rb
       subfolder, file_part = file.split(%r{(?:^|/)(?:test|spec)/}, 2)
@@ -222,6 +231,10 @@ module SingleCov
       file_part = @rewrite.call(file_part) if @rewrite
 
       file_part
+    end
+
+    def root
+      @root ||= (defined?(Bundler) && Bundler.root.to_s) || Dir.pwd
     end
   end
 end

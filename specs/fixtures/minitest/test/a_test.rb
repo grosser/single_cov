@@ -3,7 +3,8 @@ require 'bundler/setup'
 $LOAD_PATH << File.expand_path('../../lib', __FILE__)
 
 require 'single_cov'
-SingleCov.setup :minitest
+root = File.expand_path("../../", __FILE__)
+SingleCov.setup :minitest, root: root
 
 require 'minitest/autorun'
 

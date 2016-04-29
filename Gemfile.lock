@@ -41,6 +41,3 @@ DEPENDENCIES
   rspec
   simplecov
   single_cov!
-
-BUNDLED WITH
-   1.11.2
