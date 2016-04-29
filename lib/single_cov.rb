@@ -1,7 +1,7 @@
 module SingleCov
   COVERAGES = []
   MAX_OUTPUT = 40
-  APP_FOLDERS = ["models", "serializers", "helpers", "controllers", "mailers", "views"]
+  APP_FOLDERS = ["models", "serializers", "helpers", "controllers", "mailers", "views", "jobs"]
 
   class << self
     # optionally rewrite the file we guessed with a lambda
