@@ -94,15 +94,11 @@ module SingleCov
 
     # do not ask for coverage when SimpleCov already does or it conflicts
     def coverage_results
-      if defined?(SimpleCov) && has_result?
-        SimpleCov.instance_variable_get(:@result).original_result
+      if defined?(SimpleCov) && (result = SimpleCov.instance_variable_get(:@result))
+        result.original_result
       else
         Coverage.result
       end
-    end
-
-    def has_result?
-      !SimpleCov.instance_variable_get(:@result).nil?
     end
 
     # start recording before classes are loaded or nothing can be recorded
