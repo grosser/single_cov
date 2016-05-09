@@ -33,7 +33,7 @@ describe SingleCov do
       end
     end
 
-    describe "when coverage has incresed" do
+    describe "when coverage has increased" do
       around { |t| change_file("test/a_test.rb", "SingleCov.covered!", "SingleCov.covered! uncovered: 1", &t) }
 
       # we might be running multiple files or have some special argument ... don't blow up
@@ -83,7 +83,7 @@ describe SingleCov do
       end
     end
 
-    it "does not complain when minitest was loaded befor setup" do
+    it "does not complain when minitest was loaded before setup" do
       change_file("test/a_test.rb", "require 'single_cov'", "require 'single_cov'\nmodule Minitest;end\n") do
         result = sh "ruby test/a_test.rb"
         assert_tests_finished_normally(result)
@@ -128,6 +128,18 @@ describe SingleCov do
           result = sh "ruby test/a_test.rb", fail: true
           assert_tests_finished_normally(result)
           expect(result).to include "4 / 5 LOC (80.0%) covered" # SimpleCov
+          expect(result).to include "(1 current vs 0 configured)" # SingleCov
+        end
+      end
+    end
+
+    describe "when SimpleCov was defined but did not start" do
+      around { |t| change_file("test/a_test.rb", default_setup, "#{default_setup}\nrequire 'simplecov'\n", &t) }
+
+      it "falls back to Coverage and complains" do
+        change_file 'lib/a.rb', "def a", "def b\n1\nend\ndef a" do
+          result = sh "ruby test/a_test.rb", fail: true
+          assert_tests_finished_normally(result)
           expect(result).to include "(1 current vs 0 configured)" # SingleCov
         end
       end
