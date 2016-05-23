@@ -122,6 +122,7 @@ module SingleCov
     end
 
     # do not record or verify when only running selected tests since it would be missing data
+    # either via option or via rails test runner which takes file:line
     def minitest_running_subset_of_tests?
       (ARGV & ['-n', '--name', '-l', '--line']).any? ||
         ARGV.first =~ /:\d+\Z/
