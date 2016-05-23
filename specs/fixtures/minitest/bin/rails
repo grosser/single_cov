@@ -1,0 +1,3 @@
+#!/usr/bin/env ruby
+ARGV.shift # ... basically what `rails test` does ...
+require './test/a_test'

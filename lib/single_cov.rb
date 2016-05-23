@@ -123,7 +123,8 @@ module SingleCov
 
     # do not record or verify when only running selected tests since it would be missing data
     def minitest_running_subset_of_tests?
-      (ARGV & ['-n', '--name', '-l', '--line']).any?
+      (ARGV & ['-n', '--name', '-l', '--line']).any? ||
+        ARGV.first =~ /:\d+\Z/
     end
 
     def rspec_running_subset_of_tests?
