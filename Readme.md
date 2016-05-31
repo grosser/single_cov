@@ -61,24 +61,24 @@ SingleCov.covered! file: 'scripts/weird_thing.rb'
 ```
 
 ### Checking usage
- 
+
 Making sure every newly added file has coverage tracking.
 
 ```Ruby
 # spec/kitchen_sink_spec.rb
 it "has coverage for all tests" do
-  # option :tests to pass custom Dir.glob results 
+  # option :tests to pass custom Dir.glob results
   SingleCov.assert_used
 end
 ```
 
 ### Checking global coverage
- 
+
 Making sure every newly added file has a corresponding test.
 
 ```Ruby
 # spec/kitchen_sink_spec.rb
-it "has coverage for all tests" do
+it "has tests for all files" do
   # option :tests and :files to pass custom Dir.glob results
   # :untested to get it passing with known untested files
   SingleCov.assert_tested
