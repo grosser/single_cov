@@ -104,7 +104,7 @@ tests.each do |f|
   File.write(f, content.join("\n"))
 
   # run the test to check coverage
-  result = `#{command.sub('%{file}', file)} 2>&1`
+  result = `#{command.sub('%{file}', f)} 2>&1`
   if $?.success?
     puts "#{f} is good!"
     next
