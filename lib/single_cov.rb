@@ -109,9 +109,8 @@ module SingleCov
     end
 
     # not running rake or a whole folder
-    # TODO make this better ...
     def running_single_file?
-      !defined?(Rake)
+      COVERAGES.size == 1
     end
 
     # we cannot insert our hooks when minitest is already running

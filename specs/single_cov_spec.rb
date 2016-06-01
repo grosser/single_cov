@@ -44,11 +44,12 @@ describe SingleCov do
         expect(result).to include message
       end
 
-      # Rails loads tests via inline loading all tests ... hard to detect :(
-      it "does not warn when running multiple files via rake" do
-        result = sh "ruby -r bundler/setup -r rake test/a_test.rb"
-        assert_tests_finished_normally(result)
-        expect(result).to_not include "has less uncovered lines"
+      it "does not warn when running multiple files" do
+        create_file 'test/b_test.rb', 'SingleCov.covered! file: "lib/a.rb"' do
+          result = sh "ruby -r bundler/setup -r ./test/a_test.rb -r ./test/b_test.rb -e 1"
+          assert_tests_finished_normally(result)
+          expect(result).to_not include "has less uncovered lines"
+        end
       end
     end
 
@@ -287,6 +288,13 @@ describe SingleCov do
     yield
   ensure
     File.write(file, old)
+  end
+
+  def create_file(file, content)
+    File.write(file, content)
+    yield
+  ensure
+    File.unlink(file)
   end
 
   def move_file(a, b)
