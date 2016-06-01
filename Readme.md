@@ -91,6 +91,7 @@ Run this from `irb` to get SingleCov added to all test files.
 
 ```Ruby
 tests = Dir['spec/**/*_spec.rb']
+command = "rspec %{file}"
 
 tests.each do |f|
   content = File.read(f)
@@ -103,7 +104,7 @@ tests.each do |f|
   File.write(f, content.join("\n"))
 
   # run the test to check coverage
-  result = `rspec #{f} 2>&1`
+  result = `#{command.sub('%{file}', file)} 2>&1`
   if $?.success?
     puts "#{f} is good!"
     next
