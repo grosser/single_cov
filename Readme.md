@@ -85,6 +85,44 @@ it "has tests for all files" do
 end
 ```
 
+### Automatic bootstrap
+
+Run this from `irb` to get SingleCov added to all test files.
+
+```Ruby
+tests = Dir['spec/**/*_spec.rb']
+
+tests.each do |f|
+  content = File.read(f)
+  next if content.include?('SingleCov.')
+
+  # add initial SingleCov call
+  content = content.split(/\n/, -1)
+  insert = content.index { |l| l !~ /require/ }
+  content[insert...insert] = ["", "SingleCov.covered!"]
+  File.write(f, content.join("\n"))
+
+  # run the test to check coverage
+  result = `rspec #{f} 2>&1`
+  if $?.success?
+    puts "#{f} is good!"
+    next
+  end
+
+  if uncovered = result[/\((\d+) current/, 1]
+    # configure uncovered
+    puts "Uncovered for #{f} is #{uncovered}"
+    content[insert+1] = "SingleCov.covered! uncovered: #{uncovered}"
+    File.write(f, content.join("\n"))
+  else
+    # mark bad tests for manual cleanup
+    content[insert+1] = "# SingleCov.covered! # TODO: manually fix this"
+    File.write(f, content.join("\n"))
+    puts "Manually fix: #{f} ... output is:\n#{result}"
+  end
+end
+```
+
 Author
 ======
 [Michael Grosser](http://grosser.it)<br/>
