@@ -40,10 +40,14 @@ SingleCov.setup :minitest
 require 'minitest/autorun'
 ```
 
-### Strange file locations
+### Unfound target file
 
 ```Ruby
+# change the guessed path
 SingleCov.rewrite { |f| f.sub('lib/unit/', 'app/models/') }
+
+# mark directory as being in app and not lib
+SingleCov::APP_FOLDERS << 'presenters'
 ```
 
 ### Known uncovered
