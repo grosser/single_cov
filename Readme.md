@@ -103,7 +103,7 @@ tests.each do |f|
 
   # add initial SingleCov call
   content = content.split(/\n/, -1)
-  insert = content.index { |l| l !~ /require/ }
+  insert = content.index { |l| l !~ /require/ && l !~ /^#/ }
   content[insert...insert] = ["", "SingleCov.covered!"]
   File.write(f, content.join("\n"))
 
