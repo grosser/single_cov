@@ -162,7 +162,9 @@ module SingleCov
         raise "#{file} does not exist and cannot be covered." unless File.exist?("#{root}/#{file}")
       else
         file = file_under_test(caller[1])
-        unless File.exist?("#{root}/#{file}")
+        if file.start_with?("/")
+          raise "Found file #{file} which is not relative to the root #{root}.\nUse `SingleCov.covered file: 'target_file.rb'` to set covered file location."
+        elsif !File.exist?("#{root}/#{file}")
           raise "Tried to guess covered file as #{file}, but it does not exist.\nUse `SingleCov.covered file: 'target_file.rb'` to set covered file location."
         end
       end
@@ -235,7 +237,7 @@ module SingleCov
     end
 
     def root
-      @root ||= (defined?(Bundler) && Bundler.root.to_s) || Dir.pwd
+      @root ||= (defined?(Bundler) && Bundler.root.to_s.sub(/\/gemfiles$/, '')) || Dir.pwd
     end
   end
 end

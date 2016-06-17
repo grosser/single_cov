@@ -275,6 +275,30 @@ describe SingleCov do
     end
   end
 
+  # covering a weird edge case where the test folder is not part of the root directory because
+  # a nested gemfile was used which changed Bundler.root
+  describe ".guess_and_check_covered_file" do
+    it "complains nicely when calling file is outside of root" do
+      expect(SingleCov).to receive(:file_under_test).and_return('/oops/foo.rb')
+      expect do
+        SingleCov.send(:guess_and_check_covered_file, nil)
+      end.to raise_error(RuntimeError, /Found file \/oops\/foo.rb which is not relative to the root/)
+    end
+  end
+
+  describe ".root" do
+    it "ignores when bundler root is in a gemfiles folder" do
+      begin
+        old = SingleCov.send(:root)
+        SingleCov.instance_variable_set(:@root, nil)
+        expect(Bundler).to receive(:root).and_return(Pathname.new(old + '/gemfiles'))
+        expect(SingleCov.send(:root)).to eq old
+      ensure
+        SingleCov.instance_variable_set(:@root, old)
+      end
+    end
+  end
+
   def sh(command, options={})
     result = Bundler.with_clean_env { `#{command} #{"2>&1" unless options[:keep_output]}` }
     raise "#{options[:fail] ? "SUCCESS" : "FAIL"} #{command}\n#{result}" if $?.success? == !!options[:fail]
