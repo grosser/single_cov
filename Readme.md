@@ -1,7 +1,7 @@
 Actionable code coverage.
 
  - Easily add coverage tracking/enforcement for legacy apps
- - Get actionable feedback on every test run
+ - Get actionable feedback on every successful test run
  - Only 2-5% runtime overhead on small files compared to 50% for `SimpleCov`
  - No more PRs with bad test coverage
 
