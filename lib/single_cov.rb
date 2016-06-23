@@ -116,8 +116,16 @@ module SingleCov
     # we cannot insert our hooks when minitest is already running
     def minitest_should_not_be_running!
       if defined?(Minitest) && Minitest.class_variable_defined?(:@@installed_at_exit) && Minitest.class_variable_get(:@@installed_at_exit)
-        raise "Load minitest after setting up SingleCov"
+        unless faked_by_forking_test_runner? # untested
+          raise "Load minitest after setting up SingleCov"
+        end
       end
+    end
+
+    # ForkingTestRunner fakes an initialized minitest to avoid multiple hooks being installed
+    # so hooks still get added in order https://github.com/grosser/forking_test_runner/pull/4
+    def faked_by_forking_test_runner?
+      defined?(Coverage) && Coverage.respond_to?(:capture_coverage!)
     end
 
     # do not record or verify when only running selected tests since it would be missing data
