@@ -68,6 +68,12 @@ describe SingleCov do
         expect(result).to_not include "uncovered"
       end
 
+      it "does not complain when only running selected tests via options and rails" do
+        result = sh "bin/rails test test/a_test.rb -n '/foo/'"
+        assert_tests_finished_normally(result)
+        expect(result).to_not include "uncovered"
+      end
+
       it "does not complain when only running selected tests via line number" do
         result = sh "bin/rails test test/a_test.rb:12"
         assert_tests_finished_normally(result)

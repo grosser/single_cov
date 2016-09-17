@@ -1,3 +1,14 @@
 #!/usr/bin/env ruby
 ARGV.shift # ... basically what `rails test` does ...
+
+require 'bundler/setup'
+require 'minitest'
+
+# calls Minitest.run which sets up reporters with all parsed options
+# and removes the options from ARGV
+options = {}
+options[:filter] = /foo/ if ARGV.delete('-n') && ARGV.delete('/foo/')
+Minitest.reporter = Minitest::CompositeReporter.new
+Minitest.reporter.reporters << Minitest::SummaryReporter.new(StringIO.new, options)
+
 require './test/a_test'
