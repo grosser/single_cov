@@ -115,11 +115,21 @@ module SingleCov
 
     # we cannot insert our hooks when minitest is already running
     def minitest_should_not_be_running!
-      if defined?(Minitest) && Minitest.class_variable_defined?(:@@installed_at_exit) && Minitest.class_variable_get(:@@installed_at_exit)
-        unless faked_by_forking_test_runner? # untested
-          raise "Load minitest after setting up SingleCov"
-        end
-      end
+      return unless defined?(Minitest)
+      return unless Minitest.class_variable_defined?(:@@installed_at_exit)
+      return unless Minitest.class_variable_get(:@@installed_at_exit)
+
+      # untested
+      # https://github.com/rails/rails/pull/26515 rails loads autorun before test
+      # but it works out for some reason
+      return if Minitest.respond_to?(:run_with_rails_extension)
+
+      # untested
+      # forking test runner does some hacky acrobatics to fake minitest status
+      # and the resets it ... works out ok in the end ...
+      return if faked_by_forking_test_runner?
+
+      raise "Load minitest after setting up SingleCov"
     end
 
     # ForkingTestRunner fakes an initialized minitest to avoid multiple hooks being installed
