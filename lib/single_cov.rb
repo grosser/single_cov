@@ -219,7 +219,7 @@ module SingleCov
     def warn_about_no_coverage(file)
       if $LOADED_FEATURES.include?("#{root}/#{file}")
         # we cannot enforce $LOADED_FEATURES during covered! since it would fail when multiple files are loaded
-        "#{file} was expected to be covered, but already loaded before tests started."
+        "#{file} was expected to be covered, but was already loaded before tests started, which makes it uncoverable."
       else
         "#{file} was expected to be covered, but never loaded."
       end
