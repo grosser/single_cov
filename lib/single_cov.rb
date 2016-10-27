@@ -141,7 +141,7 @@ module SingleCov
     # do not record or verify when only running selected tests since it would be missing data
     def minitest_running_subset_of_tests?
       # via direct option (ruby test.rb -n /foo/)
-      (ARGV & ['-n', '--name', '-l', '--line']).any? ||
+      (ARGV.map { |a| a.split('=', 2).first } & ['-n', '--name', '-l', '--line']).any? ||
 
       # via testrbl or mtest or rails with direct line number (mtest test.rb:123)
       (ARGV.first =~ /:\d+\Z/) ||
