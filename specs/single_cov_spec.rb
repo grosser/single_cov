@@ -183,8 +183,14 @@ describe SingleCov do
         expect(result).to include "uncovered"
       end
 
-      it "does not complains when running a subset of tests" do
+      it "does not complains when running a subset of tests by line" do
         result = sh "bundle exec rspec spec/a_spec.rb:14"
+        assert_specs_finished_normally(result)
+        expect(result).to_not include "uncovered"
+      end
+
+      it "does not complains when running a subset of tests sub-line" do
+        result = sh "bundle exec rspec spec/a_spec.rb[1:1]"
         assert_specs_finished_normally(result)
         expect(result).to_not include "uncovered"
       end

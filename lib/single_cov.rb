@@ -157,7 +157,7 @@ module SingleCov
     end
 
     def rspec_running_subset_of_tests?
-      (ARGV & ['-t', '--tag', '-e', '--example']).any? || ARGV.any? { |a| a =~ /\:\d+$/ }
+      (ARGV & ['-t', '--tag', '-e', '--example']).any? || ARGV.any? { |a| a =~ /\:\d+$|\[[\d:]+\]$/ }
     end
 
     # code stolen from SimpleCov

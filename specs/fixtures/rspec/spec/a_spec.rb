@@ -14,4 +14,10 @@ describe A do
   it "does a" do
     expect(A.new.a).to eq 1
   end
+
+  2.times do |i|
+    it "does i" do
+      expect(1).to eq 1
+    end
+  end
 end
