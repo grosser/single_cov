@@ -170,7 +170,7 @@ describe SingleCov do
 
     it "does not complain when everything is covered" do
       result = sh "bundle exec rspec spec/a_spec.rb"
-      assert_specs_finished_normally(result)
+      assert_specs_finished_normally(result, 3)
       expect(result).to_not include "uncovered"
     end
 
@@ -179,32 +179,32 @@ describe SingleCov do
 
       it "complains when something is uncovered" do
         result = sh "bundle exec rspec spec/a_spec.rb", fail: true
-        assert_specs_finished_normally(result)
+        assert_specs_finished_normally(result, 3)
         expect(result).to include "uncovered"
       end
 
       it "does not complains when running a subset of tests by line" do
         result = sh "bundle exec rspec spec/a_spec.rb:14"
-        assert_specs_finished_normally(result)
+        assert_specs_finished_normally(result, 1)
         expect(result).to_not include "uncovered"
       end
 
       it "does not complains when running a subset of tests sub-line" do
         result = sh "bundle exec rspec spec/a_spec.rb[1:1]"
-        assert_specs_finished_normally(result)
+        assert_specs_finished_normally(result, 1)
         expect(result).to_not include "uncovered"
       end
 
       it "does not complains when running a subset of tests by name" do
         result = sh "bundle exec rspec spec/a_spec.rb -e 'does a'"
-        assert_specs_finished_normally(result)
+        assert_specs_finished_normally(result, 1)
         expect(result).to_not include "uncovered"
       end
 
       it "does not complain when tests failed" do
         change_file("spec/a_spec.rb", "eq 1", "eq 2") do
           result = sh "bundle exec rspec spec/a_spec.rb", fail: true
-          expect(result).to include "1 example, 1 failure"
+          expect(result).to include "3 examples, 1 failure"
           expect(result).to_not include "uncovered"
         end
       end
@@ -350,7 +350,7 @@ describe SingleCov do
     expect(result).to include "1 runs, 1 assertions, 0 failures"
   end
 
-  def assert_specs_finished_normally(result)
-    expect(result).to include "1 example, 0 failures"
+  def assert_specs_finished_normally(result, examples)
+    expect(result).to include "#{examples} example#{'s' if examples != 1}, 0 failures"
   end
 end
