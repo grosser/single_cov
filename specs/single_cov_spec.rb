@@ -4,7 +4,7 @@ SingleCov.instance_variable_set(:@root, File.expand_path("../fixtures/minitest",
 
 describe SingleCov do
   it "has a VERSION" do
-    expect(SingleCov::VERSION).to match /^[\.\da-z]+$/
+    expect(SingleCov::VERSION).to match(/^[\.\da-z]+$/)
   end
 
   describe "minitest" do

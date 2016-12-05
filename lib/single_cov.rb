@@ -260,7 +260,7 @@ module SingleCov
       # put back the subfolder
       file_part[0...0] = "#{subfolder}/" unless subfolder.empty?
 
-      file_part = @rewrite.call(file_part) if @rewrite
+      file_part = @rewrite.call(file_part) if defined?(@rewrite) && @rewrite
 
       file_part
     end
