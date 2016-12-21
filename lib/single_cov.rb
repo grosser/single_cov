@@ -122,7 +122,7 @@ module SingleCov
       # untested
       # https://github.com/rails/rails/pull/26515 rails loads autorun before test
       # but it works out for some reason
-      return if Minitest.respond_to?(:run_with_rails_extension)
+      return if Minitest.extensions.include?('rails')
 
       # untested
       # forking test runner does some hacky acrobatics to fake minitest status
