@@ -75,7 +75,7 @@ describe "Coverage" do
     # option :tests to pass custom Dir.glob results
     SingleCov.assert_used
   end
-  
+
   it "does not let users add new untested files" do
     # option :tests and :files to pass custom Dir.glob results
     # :untested to get it passing with known untested files
@@ -90,7 +90,7 @@ Run this from `irb` to get SingleCov added to all test files.
 
 ```Ruby
 tests = Dir['spec/**/*_spec.rb']
-command = "rspec %{file}"
+command = "bundle exec rspec %{file}"
 
 tests.each do |f|
   content = File.read(f)
