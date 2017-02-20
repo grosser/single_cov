@@ -18,6 +18,12 @@ describe SingleCov do
       expect(result).to_not include "uncovered"
     end
 
+    it "is silent" do
+      result = sh "ruby test/a_test.rb"
+      assert_tests_finished_normally(result)
+      expect(result).to_not include "warning"
+    end
+
     it "can run from non-root" do
       result = sh "cd test && ruby a_test.rb"
       assert_tests_finished_normally(result)

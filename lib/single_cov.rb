@@ -78,7 +78,7 @@ module SingleCov
       start_coverage_recording
 
       override_at_exit do |status, _exception|
-        exit 1 if !@disabled && status == 0 && !SingleCov.all_covered?(coverage_results)
+        exit 1 if (!defined?(@disabled) || !@disabled) && status == 0 && !SingleCov.all_covered?(coverage_results)
       end
     end
 

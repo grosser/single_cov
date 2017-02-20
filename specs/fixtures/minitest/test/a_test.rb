@@ -1,6 +1,7 @@
 require 'bundler/setup'
 
 $LOAD_PATH << File.expand_path('../../lib', __FILE__)
+$VERBOSE = true
 
 require 'single_cov'
 root = File.expand_path("../../", __FILE__)
