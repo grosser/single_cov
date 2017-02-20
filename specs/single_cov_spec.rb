@@ -109,6 +109,14 @@ describe SingleCov do
       end
     end
 
+    it "does not complain in forks" do
+      change_file("test/a_test.rb", %{it "does a" do}, %{it "does a" do\nfork { }\n}) do
+        result = sh "ruby test/a_test.rb"
+        assert_tests_finished_normally(result)
+        expect(result).to_not include("cover")
+      end
+    end
+
     describe "when file cannot be found from caller" do
       around { |test| move_file("test/a_test.rb", "test/b_test.rb", &test) }
 
@@ -172,6 +180,13 @@ describe SingleCov do
       result = sh "bundle exec rspec spec/a_spec.rb"
       assert_specs_finished_normally(result, 3)
       expect(result).to_not include "uncovered"
+    end
+
+    it "does not complain in forks when disabled" do
+      change_file("spec/a_spec.rb", %{it "does a" do}, %{it "does a" do\nfork { SingleCov.disable }\n}) do
+        result = sh "bundle exec rspec spec/a_spec.rb"
+        assert_specs_finished_normally(result, 3)
+      end
     end
 
     describe "when something is uncovered" do

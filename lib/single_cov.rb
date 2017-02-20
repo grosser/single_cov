@@ -78,8 +78,13 @@ module SingleCov
       start_coverage_recording
 
       override_at_exit do |status, _exception|
-        exit 1 if status == 0 && !SingleCov.all_covered?(coverage_results)
+        exit 1 if !@disabled && status == 0 && !SingleCov.all_covered?(coverage_results)
       end
+    end
+
+    # use this in forks when using rspec to silence duplicated output
+    def disable
+      @disabled = true
     end
 
     private
