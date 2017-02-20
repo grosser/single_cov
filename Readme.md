@@ -64,6 +64,15 @@ SingleCov.covered! uncovered: 4
 SingleCov.covered! file: 'scripts/weird_thing.rb'
 ```
 
+### Forking vs RSpec
+
+```Ruby
+it "does not alert in forks" do
+  fork { SingleCov.disable }
+  expect(true).to eq true
+end
+```
+
 ### Checking usage
 
 ```Ruby
