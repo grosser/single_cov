@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    single_cov (0.5.9)
+    single_cov (0.6.0)
 
 GEM
   remote: https://rubygems.org/
