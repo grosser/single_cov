@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    single_cov (0.6.1)
+    single_cov (0.7.0)
 
 GEM
   remote: https://rubygems.org/
@@ -43,4 +43,4 @@ DEPENDENCIES
   single_cov!
 
 BUNDLED WITH
-   1.13.6
+   1.15.0
