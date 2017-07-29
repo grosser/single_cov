@@ -215,9 +215,17 @@ module SingleCov
       else
         [
           "#{file} new uncovered lines introduced #{details}",
-          "Lines missing coverage:",
+          red("Lines missing coverage:"),
           *uncovered_lines
         ].join("\n")
+      end
+    end
+
+    def red(text)
+      if $stdin.tty?
+        "\e[31m#{text}\e[0m"
+      else
+        text
       end
     end
 
