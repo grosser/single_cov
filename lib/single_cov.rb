@@ -20,7 +20,13 @@ module SingleCov
     def all_covered?(result)
       errors = COVERAGES.map do |file, expected_uncovered|
         if coverage = result["#{root}/#{file}"]
-          uncovered_lines = coverage.each_with_index.map { |c, i| "#{file}:#{i+1}" if c == 0 }.compact
+          lines = (coverage.is_a?(Hash) ? coverage.fetch(:lines) : coverage)
+          uncovered_lines = line_coverage(file, lines)
+
+          if branches = (coverage.is_a?(Hash) && coverage[:branches])
+            uncovered_lines += branch_coverage(file, branches)
+          end
+
           next if uncovered_lines.size == expected_uncovered
           warn_about_bad_coverage(file, expected_uncovered, uncovered_lines)
         else
@@ -58,9 +64,15 @@ module SingleCov
       end
     end
 
-    def setup(framework, root: nil)
+    def setup(framework, root: nil, branches: false)
       if defined?(SimpleCov)
         raise "Load SimpleCov after SingleCov"
+      end
+      if branches && RUBY_VERSION < "2.5.0"
+        warn "Branch coverage needs ruby 2.5.0"
+        @branches = false
+      else
+        @branches = branches
       end
 
       @root = root if root
@@ -89,6 +101,16 @@ module SingleCov
 
     private
 
+    def line_coverage(file, coverage)
+      coverage.each_with_index.map { |c, i| "#{file}:#{i + 1}" if c == 0 }.compact
+    end
+
+    def branch_coverage(file, coverage)
+      coverage.each_value.flat_map do |branch_part|
+        branch_part.select { |_k, v| v == 0 }.map { |k, _| "#{file}:#{k[2]}:#{k[3]+1}-#{k[4]}:#{k[5]+1}" }
+      end
+    end
+
     def default_tests
       glob("{test,spec}/**/*_{test,spec}.rb")
     end
@@ -110,7 +132,11 @@ module SingleCov
     # SimpleCov might start coverage again, but that does not hurt ...
     def start_coverage_recording
       require 'coverage'
-      Coverage.start
+      if @branches
+        Coverage.start(lines: true, branches: true)
+      else
+        Coverage.start
+      end
     end
 
     # not running rake or a whole folder

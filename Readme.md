@@ -4,6 +4,7 @@ Actionable code coverage.
  - Get actionable feedback on every successful test run
  - Only 2-5% runtime overhead on small files compared to 50% for `SimpleCov`
  - No more PRs with bad test coverage
+ - Branch coverage on ruby 2.5+
 
 ```Ruby
 # Gemfile
@@ -11,7 +12,7 @@ gem 'single_cov', group: :test
 
 # spec/spec_helper.rb ... load before loading rails / minitest / libraries
 require 'single_cov'
-SingleCov.setup :rspec
+SingleCov.setup :rspec, branches: true
 
 # spec/foobar_spec.rb ... add covered! call to every test file
 require 'spec_helper'
@@ -36,7 +37,7 @@ lib/foobar.rb:23
 Call setup before loading minitest.
 
 ```Ruby
-SingleCov.setup :minitest
+SingleCov.setup :minitest, branches: true
 require 'minitest/autorun'
 ```
 

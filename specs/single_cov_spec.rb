@@ -3,6 +3,15 @@ require_relative "spec_helper"
 SingleCov.instance_variable_set(:@root, File.expand_path("../fixtures/minitest", __FILE__))
 
 describe SingleCov do
+  def self.it_does_not_complain_when_everything_is_covered
+    it "does not complain when everything is covered" do
+      result = sh "ruby test/a_test.rb"
+      assert_tests_finished_normally(result)
+      expect(result).to_not include "uncovered"
+    end
+  end
+
+
   it "has a VERSION" do
     expect(SingleCov::VERSION).to match(/^[\.\da-z]+$/)
   end
@@ -12,11 +21,7 @@ describe SingleCov do
 
     around { |test| Dir.chdir("specs/fixtures/minitest", &test) }
 
-    it "does not complain when everything is covered" do
-      result = sh "ruby test/a_test.rb"
-      assert_tests_finished_normally(result)
-      expect(result).to_not include "uncovered"
-    end
+    it_does_not_complain_when_everything_is_covered
 
     it "is silent" do
       result = sh "ruby test/a_test.rb"
@@ -177,6 +182,26 @@ describe SingleCov do
         end
       end
     end
+
+    describe "branch coverage" do
+      around { |t| change_file("test/a_test.rb", "root: root", "root: root, branches: true", &t) }
+
+      it_does_not_complain_when_everything_is_covered
+
+      describe "with branches" do
+        around { |t| change_file("lib/a.rb", "1", "2.times { |i| rand if i == 0 }", &t) }
+
+        it_does_not_complain_when_everything_is_covered
+
+        it "complains when coverage is missing" do
+          change_file("lib/a.rb", "i == 0", "i != i") do
+            result = sh "ruby test/a_test.rb", fail: true
+            expect(result).to include ".lib/a.rb new uncovered lines introduced (1 current vs 0 configured)"
+            expect(result).to include "lib/a.rb:3:19-3:23"
+          end
+        end
+      end
+    end if RUBY_VERSION >= "2.5.0"
   end
 
   describe "rspec" do
