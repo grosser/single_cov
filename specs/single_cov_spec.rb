@@ -200,6 +200,14 @@ describe SingleCov do
             expect(result).to include "lib/a.rb:3:19-3:23"
           end
         end
+
+        it "does not complain about branch being missing when line is not covered" do
+          change_file("lib/a.rb", "end", "end\ndef b\n2.times { |i| rand if i == 0 }\nend\n") do
+            result = sh "ruby test/a_test.rb", fail: true
+            expect(result).to include ".lib/a.rb new uncovered lines introduced (1 current vs 0 configured)"
+            expect(result).to include "lib/a.rb:6"
+          end
+        end
       end
     end if RUBY_VERSION >= "2.5.0"
   end
