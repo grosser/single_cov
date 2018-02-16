@@ -20,15 +20,17 @@ module SingleCov
     def all_covered?(result)
       errors = COVERAGES.map do |file, expected_uncovered|
         if coverage = result["#{root}/#{file}"]
-          lines = (coverage.is_a?(Hash) ? coverage.fetch(:lines) : coverage)
-          uncovered_lines = line_coverage(file, lines)
+          line_coverage = (coverage.is_a?(Hash) ? coverage.fetch(:lines) : coverage)
+          uncovered_lines = line_coverage.each_with_index.map { |c, i| i + 1 if c == 0 }.compact
 
-          if branches = (coverage.is_a?(Hash) && coverage[:branches])
-            uncovered_lines += branch_coverage(file, branches)
+          uncovered = uncovered_lines.map { |l| "#{file}:#{l}" }
+
+          if branch_coverage = (coverage.is_a?(Hash) && coverage[:branches])
+            uncovered += uncovered_branches(file, branch_coverage, uncovered_lines)
           end
 
-          next if uncovered_lines.size == expected_uncovered
-          warn_about_bad_coverage(file, expected_uncovered, uncovered_lines)
+          next if uncovered.size == expected_uncovered
+          warn_about_bad_coverage(file, expected_uncovered, uncovered)
         else
           warn_about_no_coverage(file)
         end
@@ -101,13 +103,11 @@ module SingleCov
 
     private
 
-    def line_coverage(file, coverage)
-      coverage.each_with_index.map { |c, i| "#{file}:#{i + 1}" if c == 0 }.compact
-    end
-
-    def branch_coverage(file, coverage)
+    def uncovered_branches(file, coverage, uncovered_lines)
       coverage.each_value.flat_map do |branch_part|
-        branch_part.select { |_k, v| v == 0 }.map { |k, _| "#{file}:#{k[2]}:#{k[3]+1}-#{k[4]}:#{k[5]+1}" }
+        branch_part.
+          select { |k, v| v.zero? && !uncovered_lines.include?(k[2]) }.
+          map { |k, _| "#{file}:#{k[2]}:#{k[3]+1}-#{k[4]}:#{k[5]+1}" }
       end
     end
 
