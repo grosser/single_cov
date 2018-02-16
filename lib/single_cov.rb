@@ -104,11 +104,14 @@ module SingleCov
     private
 
     def uncovered_branches(file, coverage, uncovered_lines)
-      coverage.each_value.flat_map do |branch_part|
+      found = coverage.each_value.flat_map do |branch_part|
         branch_part.
           select { |k, v| v.zero? && !uncovered_lines.include?(k[2]) }.
           map { |k, _| "#{file}:#{k[2]}:#{k[3]+1}-#{k[4]}:#{k[5]+1}" }
       end
+      found.sort!
+      found.uniq!
+      found
     end
 
     def default_tests
