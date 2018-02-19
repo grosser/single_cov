@@ -163,6 +163,11 @@ module SingleCov
       # and the resets it ... works out ok in the end ...
       return if faked_by_forking_test_runner?
 
+      # ... but only if it's used with `--merge-coverage` otherwise the coverage reporting is useless
+      if $0.end_with?("/forking-test-runner")
+        raise "forking-test-runner only work with single_cov when using --merge-coverage"
+      end
+
       raise "Load minitest after setting up SingleCov"
     end
 
