@@ -104,11 +104,17 @@ module SingleCov
     private
 
     def uncovered_branches(file, coverage, uncovered_lines)
-      found = coverage.each_value.flat_map do |branch_part|
-        branch_part.
-          select { |k, v| v.zero? && !uncovered_lines.include?(k[2]) }.
-          map { |k, _| "#{file}:#{k[2]}:#{k[3]+1}-#{k[4]}:#{k[5]+1}" }
+      # {[branch_id] => {[branch_part] => coverage}} --> {branch_part -> sum-of-coverage}
+      sum = Hash.new(0)
+      coverage.each_value do |branch|
+        branch.each do |k, v|
+          sum[k.slice(2, 4)] += v
+        end
       end
+
+      # show missing coverage
+      found = sum.select { |k, v| v.zero? && !uncovered_lines.include?(k[0]) }.
+        map { |k, _| "#{file}:#{k[0]}:#{k[1]+1}-#{k[2]}:#{k[3]+1}" }
       found.sort!
       found.uniq!
       found
