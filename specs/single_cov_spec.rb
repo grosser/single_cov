@@ -153,7 +153,10 @@ describe SingleCov do
     end
 
     describe "when SimpleCov was loaded after" do
-      around { |t| change_file("test/a_test.rb", default_setup, "#{default_setup}\nrequire 'simplecov'\nSimpleCov.start\n", &t) }
+      # NOTE: SimpleCov also starts coverage and will break when we activated branches
+      let(:branchless_setup) { default_setup.sub('root: root', 'root: root, branches: false') }
+
+      around { |t| change_file("test/a_test.rb", default_setup, "#{branchless_setup}\nrequire 'simplecov'\nSimpleCov.start\n", &t) }
 
       it "works" do
         result = sh "ruby test/a_test.rb"

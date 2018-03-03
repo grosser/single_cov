@@ -2,6 +2,7 @@ module SingleCov
   COVERAGES = []
   MAX_OUTPUT = 40
   APP_FOLDERS = ["models", "serializers", "helpers", "controllers", "mailers", "views", "jobs"]
+  BRANCH_COVERAGE_SUPPORTED = (RUBY_VERSION >= "2.5.0")
 
   class << self
     # optionally rewrite the file we guessed with a lambda
@@ -66,18 +67,16 @@ module SingleCov
       end
     end
 
-    def setup(framework, root: nil, branches: false)
+    def setup(framework, root: nil, branches: BRANCH_COVERAGE_SUPPORTED)
       if defined?(SimpleCov)
         raise "Load SimpleCov after SingleCov"
       end
-      if branches && RUBY_VERSION < "2.5.0"
-        warn "Branch coverage needs ruby 2.5.0"
-        @branches = false
-      else
-        @branches = branches
+      if branches && !BRANCH_COVERAGE_SUPPORTED
+        raise "Branch coverage needs ruby >= 2.5.0"
       end
 
-      @root = root if root
+      @branches = branches
+      @root = root
 
       case framework
       when :minitest
