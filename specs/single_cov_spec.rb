@@ -209,11 +209,19 @@ describe SingleCov do
           end
         end
 
-        it "does duplicate coverage" do
+        it "does not duplicate coverage" do
           change_file("lib/a.rb", "i == 0", "i == 0 if i if 0 if false") do
             result = sh "ruby test/a_test.rb", fail: true
             expect(result).to include ".lib/a.rb new uncovered lines introduced (3 current vs 0 configured)"
             expect(result).to include "lib/a.rb:3:19-3:23\nlib/a.rb:3:19-3:33\nlib/a.rb:3:19-3:38"
+          end
+        end
+
+        it "ignores 0 coverage from duplicate ensure branches" do
+          change_file("lib/a.rb", "i == 0", "begin; i == 0; ensure; i == 0 if i == 0;end") do
+            result = sh "ruby test/a_test.rb"
+            assert_tests_finished_normally(result)
+            expect(result).to_not include "uncovered"
           end
         end
       end
