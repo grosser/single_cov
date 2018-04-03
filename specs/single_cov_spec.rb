@@ -134,7 +134,7 @@ describe SingleCov do
       it "complains" do
         result = sh "ruby test/b_test.rb", fail: true
         expect(result).to include "Tried to guess covered file as lib/b.rb, but it does not exist."
-        expect(result).to include "Use `SingleCov.covered file: 'target_file.rb'` to set covered file location."
+        expect(result).to include "Use `SingleCov.covered! file: 'target_file.rb'` to set covered file location."
       end
 
       it "works with a rewrite" do
