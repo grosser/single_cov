@@ -236,9 +236,9 @@ module SingleCov
       else
         file = file_under_test(caller[1])
         if file.start_with?("/")
-          raise "Found file #{file} which is not relative to the root #{root}.\nUse `SingleCov.covered file: 'target_file.rb'` to set covered file location."
+          raise "Found file #{file} which is not relative to the root #{root}.\nUse `SingleCov.covered! file: 'target_file.rb'` to set covered file location."
         elsif !File.exist?("#{root}/#{file}")
-          raise "Tried to guess covered file as #{file}, but it does not exist.\nUse `SingleCov.covered file: 'target_file.rb'` to set covered file location."
+          raise "Tried to guess covered file as #{file}, but it does not exist.\nUse `SingleCov.covered! file: 'target_file.rb'` to set covered file location."
         end
       end
 
