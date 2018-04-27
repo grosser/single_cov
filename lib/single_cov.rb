@@ -22,15 +22,22 @@ module SingleCov
       errors = COVERAGES.map do |file, expected_uncovered|
         if coverage = result["#{root}/#{file}"]
           line_coverage = (coverage.is_a?(Hash) ? coverage.fetch(:lines) : coverage)
-          uncovered_lines = line_coverage.each_with_index.map { |c, i| i + 1 if c == 0 }.compact
+          uncovered = line_coverage.each_with_index.map { |c, i| i + 1 if c == 0 }.compact
+          branch_coverage = (coverage.is_a?(Hash) && coverage[:branches])
 
-          uncovered = uncovered_lines.map { |l| "#{file}:#{l}" }
-
-          if branch_coverage = (coverage.is_a?(Hash) && coverage[:branches])
-            uncovered += uncovered_branches(file, branch_coverage, uncovered_lines)
+          if branch_coverage
+            uncovered.concat uncovered_branches(file, branch_coverage, uncovered)
           end
 
           next if uncovered.size == expected_uncovered
+
+          # branches are unsorted and added to the end, only sort when necessary
+          uncovered.sort! if branch_coverage
+
+          uncovered.map! do |line_start, char_start, line_end, char_end|
+            char_start ? "#{file}:#{line_start}:#{char_start}-#{line_end}:#{char_end}" : "#{file}:#{line_start}"
+          end
+
           warn_about_bad_coverage(file, expected_uncovered, uncovered)
         else
           warn_about_no_coverage(file)
@@ -113,8 +120,7 @@ module SingleCov
 
       # show missing coverage
       found = sum.select { |k, v| v.zero? && !uncovered_lines.include?(k[0]) }.
-        map { |k, _| "#{file}:#{k[0]}:#{k[1]+1}-#{k[2]}:#{k[3]+1}" }
-      found.sort!
+        map { |k, _| [k[0], k[1]+1, k[2], k[3]+1] }
       found.uniq!
       found
     end
