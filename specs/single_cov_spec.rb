@@ -196,11 +196,21 @@ describe SingleCov do
 
         it_does_not_complain_when_everything_is_covered
 
-        it "complains when coverage is missing" do
+        it "complains when branch coverage is missing" do
           change_file("lib/a.rb", "i == 0", "i != i") do
             result = sh "ruby test/a_test.rb", fail: true
             expect(result).to include ".lib/a.rb new uncovered lines introduced (1 current vs 0 configured)"
             expect(result).to include "lib/a.rb:3:19-3:23"
+          end
+        end
+
+        it "complains sorted when line and branch coverage are bad" do
+          change_file 'lib/a.rb', "def a", "def b\n1\nend\ndef a" do
+            change_file("lib/a.rb", "i == 0", "i != i") do
+              result = sh "ruby test/a_test.rb 2>&1", fail: true
+              expect(result).to include "lib/a.rb new uncovered lines introduced (2 current vs 0 configured)"
+              expect(result).to include "lib/a.rb:3\nlib/a.rb:6:19-6:23"
+            end
           end
         end
 

@@ -32,7 +32,9 @@ module SingleCov
           next if uncovered.size == expected_uncovered
 
           # branches are unsorted and added to the end, only sort when necessary
-          uncovered.sort! if branch_coverage
+          if branch_coverage
+            uncovered.sort_by! { |line_start, char_start, line_end, char_end| [line_start, char_start || 0] }
+          end
 
           uncovered.map! do |line_start, char_start, line_end, char_end|
             char_start ? "#{file}:#{line_start}:#{char_start}-#{line_end}:#{char_end}" : "#{file}:#{line_start}"
