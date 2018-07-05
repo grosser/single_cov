@@ -15,6 +15,8 @@ require 'a'
 
 describe A do
   it "does a" do
+fork { }
+
     assert A.new.a
   end
 end

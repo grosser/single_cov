@@ -1,7 +1,7 @@
 module SingleCov
   COVERAGES = []
   MAX_OUTPUT = 40
-  APP_FOLDERS = ["models", "serializers", "helpers", "controllers", "mailers", "views", "jobs"]
+  APP_FOLDERS = ["models", "serializers", "helpers", "controllers", "mailers", "views", "jobs", "channels"]
   BRANCH_COVERAGE_SUPPORTED = (RUBY_VERSION >= "2.5.0")
 
   class << self
