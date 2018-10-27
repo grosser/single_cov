@@ -3,6 +3,7 @@ module SingleCov
   MAX_OUTPUT = 40
   APP_FOLDERS = ["models", "serializers", "helpers", "controllers", "mailers", "views", "jobs", "channels"]
   BRANCH_COVERAGE_SUPPORTED = (RUBY_VERSION >= "2.5.0")
+  UNCOVERED_COMMENT_MARKER = "uncovered"
 
   class << self
     # optionally rewrite the file we guessed with a lambda
@@ -31,9 +32,18 @@ module SingleCov
 
           next if uncovered.size == expected_uncovered
 
+          # ignore lines that are marked as uncovered via comments
+          # NOTE: ideally we should also warn when using uncovered but the section is indeed covered
+          content = File.readlines(file)
+          uncovered.reject! do |line_start, _, _, _|
+            content[line_start - 1].include?(UNCOVERED_COMMENT_MARKER)
+          end
+
+          next if uncovered.size == expected_uncovered
+
           # branches are unsorted and added to the end, only sort when necessary
           if branch_coverage
-            uncovered.sort_by! { |line_start, char_start, line_end, char_end| [line_start, char_start || 0] }
+            uncovered.sort_by! { |line_start, char_start, _, _| [line_start, char_start || 0] }
           end
 
           uncovered.map! do |line_start, char_start, line_end, char_end|

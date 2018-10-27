@@ -53,6 +53,8 @@ SingleCov::APP_FOLDERS << 'presenters'
 
 ### Known uncovered
 
+Add the inline comment `# uncovered` to not be alerted about it being uncovered.
+
 Prevent addition of new uncovered code, without having to cover all existing code.
 
 ```Ruby

@@ -104,6 +104,12 @@ describe SingleCov do
           expect(result).to_not include "uncovered"
         end
       end
+
+      it "does not complain when individually disabled" do
+        change_file("lib/a.rb", "1", "1 # uncovered") do
+          sh "ruby test/a_test.rb"
+        end
+      end
     end
 
     it "complains when minitest was started before and setup will not work" do
@@ -408,7 +414,7 @@ describe SingleCov do
 
   def change_file(file, find, replace)
     old = File.read(file)
-    raise "Did not find #{find}" unless new = old.dup.sub!(find, replace)
+    raise "Did not find #{find} in:\n#{old}" unless new = old.dup.sub!(find, replace)
     File.write(file, new)
     yield
   ensure
