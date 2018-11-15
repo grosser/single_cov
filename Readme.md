@@ -1,10 +1,22 @@
 Actionable code coverage.
 
- - Easily add coverage tracking/enforcement for legacy apps
- - Get actionable feedback on every successful test run
- - Only 2-5% runtime overhead on small files compared to 50% for `SimpleCov`
- - No more PRs with bad test coverage
+```Bash
+rspec spec/foobar_spec.rb
+......
+114 example, 0 failures
+
+lib/foobar.rb new uncovered lines introduced (2 current vs 0 configured)",
+Uncovered lines:
+lib/foobar.rb:22
+lib/foobar.rb:23
+```
+
+ - Missing coverage on every 💚 test run
+ - Catch coverage issues before making PRs
+ - Easily add coverage enforcement for legacy apps
+ - 2-5% runtime overhead on small files, compared to 50% for `SimpleCov`
  - Branch coverage on ruby 2.5+ (disable via `branches: false`)
+ - Use with [forking_test_runner](https://github.com/grosser/forking_test_runner) for per test coverage
 
 ```Ruby
 # Gemfile
@@ -19,17 +31,6 @@ require 'spec_helper'
 SingleCov.covered!
 
 describe "xyz" do ...
-```
-
-```Bash
-rspec spec/foobar_spec.rb
-......
-114 example, 0 failures
-
-lib/foobar.rb new uncovered lines introduced (2 current vs 0 configured)",
-Uncovered lines:
-lib/foobar.rb:22
-lib/foobar.rb:23
 ```
 
 ### Minitest
