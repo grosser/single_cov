@@ -257,9 +257,21 @@ describe SingleCov do
     end
 
     it "does not complain in forks when disabled" do
-      change_file("spec/a_spec.rb", %{it "does a" do}, %{it "does a" do\nfork { SingleCov.disable }\n}) do
+      change_file(
+        "spec/a_spec.rb",
+        %{it "does a" do}, %{it "does a" do\nfork { SingleCov.remove_instance_variable(:@pid); SingleCov.disable }\n}
+      ) do
+        result = sh "bundle exec rspec spec/a_spec.rb"
+        expect(result).to_not include "uncovered"
+        assert_specs_finished_normally(result, 3)
+      end
+    end
+
+    it "does not complain in forks by default" do
+      change_file("spec/a_spec.rb", %{it "does a" do}, %{it "does a" do\nfork { 11 }\n}) do
         result = sh "bundle exec rspec spec/a_spec.rb"
         assert_specs_finished_normally(result, 3)
+        expect(result).to_not include "uncovered"
       end
     end
 
