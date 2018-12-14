@@ -12,11 +12,13 @@ module SingleCov
     end
 
     def not_covered!
+      store_pid
     end
 
     def covered!(file: nil, uncovered: 0)
       file = guess_and_check_covered_file(file)
       COVERAGES << [file, uncovered]
+      store_pid
     end
 
     def all_covered?(result)
@@ -27,7 +29,7 @@ module SingleCov
           branch_coverage = (coverage.is_a?(Hash) && coverage[:branches])
 
           if branch_coverage
-            uncovered.concat uncovered_branches(file, branch_coverage, uncovered)
+            uncovered.concat uncovered_branches(branch_coverage, uncovered)
           end
 
           next if uncovered.size == expected_uncovered
@@ -110,7 +112,7 @@ module SingleCov
       start_coverage_recording
 
       override_at_exit do |status, _exception|
-        exit 1 if (!defined?(@disabled) || !@disabled) && status == 0 && !SingleCov.all_covered?(coverage_results)
+        exit 1 if enabled? && main_process? && status == 0 && !SingleCov.all_covered?(coverage_results)
       end
     end
 
@@ -121,7 +123,19 @@ module SingleCov
 
     private
 
-    def uncovered_branches(file, coverage, uncovered_lines)
+    def enabled?
+      (!defined?(@disabled) || !@disabled)
+    end
+
+    def store_pid
+      @pid = Process.pid
+    end
+
+    def main_process?
+      (!defined?(@pid) || @pid == Process.pid)
+    end
+
+    def uncovered_branches(coverage, uncovered_lines)
       # {[branch_id] => {[branch_part] => coverage}} --> {branch_part -> sum-of-coverage}
       sum = Hash.new(0)
       coverage.each_value do |branch|
