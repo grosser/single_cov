@@ -24,13 +24,20 @@ module SingleCov
     def all_covered?(result)
       errors = COVERAGES.map do |file, expected_uncovered|
         if coverage = result["#{root}/#{file}"]
-          line_coverage = (coverage.is_a?(Hash) ? coverage.fetch(:lines) : coverage)
-          uncovered = line_coverage.each_with_index.map { |c, i| i + 1 if c == 0 }.compact
+          uncovered_lines =
+            if coverage.is_a?(Hash)
+              if lines = coverage[:lines]
+                uncovered_lines_from_hash(lines)
+              else
+                uncovered_lines_from_oneshot(file, coverage.fetch(:oneshot_lines))
+              end
+            else
+              uncovered_lines_from_hash(coverage)
+            end
           branch_coverage = (coverage.is_a?(Hash) && coverage[:branches])
 
-          if branch_coverage
-            uncovered.concat uncovered_branches(branch_coverage, uncovered)
-          end
+          uncovered = uncovered_lines
+          uncovered.concat uncovered_branches(branch_coverage, uncovered_lines) if branch_coverage
 
           next if uncovered.size == expected_uncovered
 
@@ -135,6 +142,16 @@ module SingleCov
       (!defined?(@pid) || @pid == Process.pid)
     end
 
+    def uncovered_lines_from_hash(hash)
+      hash.each_with_index.map { |c, i| i + 1 if c == 0 }.compact
+    end
+
+    # FIXME: not possible to know which lines are code but not covered
+    def uncovered_lines_from_oneshot(file, covered_lines)
+      lines = Array.new(File.read(file).count("\n") + 1).each_with_index.map { |_, i| i + 1 }
+      lines - covered_lines
+    end
+
     def uncovered_branches(coverage, uncovered_lines)
       # {[branch_id] => {[branch_part] => coverage}} --> {branch_part -> sum-of-coverage}
       sum = Hash.new(0)
@@ -173,7 +190,7 @@ module SingleCov
     def start_coverage_recording
       require 'coverage'
       if @branches
-        Coverage.start(lines: true, branches: true)
+        Coverage.start(branches: true, oneshot_lines: true)
       else
         Coverage.start
       end
