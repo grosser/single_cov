@@ -25,13 +25,12 @@ module SingleCov
       errors = COVERAGES.map do |file, expected_uncovered|
         if coverage = result["#{root}/#{file}"]
           line_coverage = (coverage.is_a?(Hash) ? coverage.fetch(:lines) : coverage)
-          uncovered = line_coverage.each_with_index.map { |c, i| i + 1 if c == 0 }.compact
+          uncovered_lines = line_coverage.each_with_index.map { |c, i| i + 1 if c == 0 }.compact
+
           branch_coverage = (coverage.is_a?(Hash) && coverage[:branches])
+          uncovered_branches = (branch_coverage ? uncovered_branches(branch_coverage, uncovered_lines) : [])
 
-          if branch_coverage
-            uncovered.concat uncovered_branches(branch_coverage, uncovered)
-          end
-
+          uncovered = uncovered_lines.concat uncovered_branches
           next if uncovered.size == expected_uncovered
 
           # ignore lines that are marked as uncovered via comments
@@ -40,10 +39,9 @@ module SingleCov
           uncovered.reject! do |line_start, _, _, _|
             content[line_start - 1].include?(UNCOVERED_COMMENT_MARKER)
           end
-
           next if uncovered.size == expected_uncovered
 
-          # branches are unsorted and added to the end, only sort when necessary
+          # branches are unsorted and added to the end, only sort when displayed
           if branch_coverage
             uncovered.sort_by! { |line_start, char_start, _, _| [line_start, char_start || 0] }
           end
@@ -145,8 +143,8 @@ module SingleCov
       end
 
       # show missing coverage
-      found = sum.select { |k, v| v.zero? && !uncovered_lines.include?(k[0]) }.
-        map { |k, _| [k[0], k[1]+1, k[2], k[3]+1] }
+      sum.select! { |k, v| v.zero? && !uncovered_lines.include?(k[0]) }
+      found = sum.map { |k, _| [k[0], k[1]+1, k[2], k[3]+1] }
       found.uniq!
       found
     end
