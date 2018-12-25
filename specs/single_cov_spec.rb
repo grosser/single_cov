@@ -35,11 +35,12 @@ describe SingleCov do
       expect(result).to_not include "uncovered"
     end
 
-    # fork exists with 1 ... so our override ignores it ...
+    # fork would exit with 1, so our pid override ignores it
     it "does not complain when forking" do
       change_file("test/a_test.rb", "assert A.new.a", "assert fork { 1 }\nsleep 0.1\n") do
         result = sh "ruby test/a_test.rb", fail: true
         assert_tests_finished_normally(result)
+        puts result
         expect(result.scan(/missing coverage/).size).to eq 1
       end
     end
