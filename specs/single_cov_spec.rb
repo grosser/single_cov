@@ -206,7 +206,7 @@ describe SingleCov do
           change_file("lib/a.rb", "i == 0", "i != i") do
             result = sh "ruby test/a_test.rb", fail: true
             expect(result).to include ".lib/a.rb new uncovered lines introduced (1 current vs 0 configured)"
-            expect(result).to include "lib/a.rb:3:19-3:23"
+            expect(result).to include "lib/a.rb:3:19-23"
           end
         end
 
@@ -215,7 +215,7 @@ describe SingleCov do
             change_file("lib/a.rb", "i == 0", "i != i") do
               result = sh "ruby test/a_test.rb 2>&1", fail: true
               expect(result).to include "lib/a.rb new uncovered lines introduced (2 current vs 0 configured)"
-              expect(result).to include "lib/a.rb:3\nlib/a.rb:6:19-6:23"
+              expect(result).to include "lib/a.rb:3\nlib/a.rb:6:19-23"
             end
           end
         end
@@ -232,7 +232,7 @@ describe SingleCov do
           change_file("lib/a.rb", "i == 0", "i == 0 if i if 0 if false") do
             result = sh "ruby test/a_test.rb", fail: true
             expect(result).to include ".lib/a.rb new uncovered lines introduced (3 current vs 0 configured)"
-            expect(result).to include "lib/a.rb:3:19-3:23\nlib/a.rb:3:19-3:33\nlib/a.rb:3:19-3:38"
+            expect(result).to include "lib/a.rb:3:19-23\nlib/a.rb:3:19-33\nlib/a.rb:3:19-38"
           end
         end
 

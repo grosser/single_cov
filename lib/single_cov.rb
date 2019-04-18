@@ -47,7 +47,15 @@ module SingleCov
           end
 
           uncovered.map! do |line_start, char_start, line_end, char_end|
-            char_start ? "#{file}:#{line_start}:#{char_start}-#{line_end}:#{char_end}" : "#{file}:#{line_start}"
+            if char_start # branch coverage
+              if line_start == line_end
+                "#{file}:#{line_start}:#{char_start}-#{char_end}"
+              else # possibly unreachable since branches always seem to be on the same line
+                "#{file}:#{line_start}:#{char_start}-#{line_end}:#{char_end}"
+              end
+            else
+              "#{file}:#{line_start}"
+            end
           end
 
           warn_about_bad_coverage(file, expected_uncovered, uncovered)
