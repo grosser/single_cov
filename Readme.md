@@ -14,7 +14,7 @@ lib/foobar.rb:23:6-19
  - Missing coverage on every 💚 test run
  - Catch coverage issues before making PRs
  - Easily add coverage enforcement for legacy apps
- - 2-5% runtime overhead on small files, compared to 50% for `SimpleCov`
+ - 2-5% runtime overhead on small files, compared to 20% for `SimpleCov`
  - Branch coverage on ruby 2.5+ (disable via `branches: false`)
  - Use with [forking_test_runner](https://github.com/grosser/forking_test_runner) for per test coverage
 
@@ -26,7 +26,7 @@ gem 'single_cov', group: :test
 require 'single_cov'
 SingleCov.setup :rspec
 
-# spec/foobar_spec.rb ... add covered! call to every test file
+# spec/foobar_spec.rb ... add covered! call to test files
 require 'spec_helper'
 SingleCov.covered!
 
@@ -45,11 +45,14 @@ require 'minitest/autorun'
 ### Unfound target file
 
 ```Ruby
-# change the guessed path
+# change all guessed paths
 SingleCov.rewrite { |f| f.sub('lib/unit/', 'app/models/') }
 
 # mark directory as being in app and not lib
 SingleCov::APP_FOLDERS << 'presenters'
+
+# add 1-off
+SingleCov.covered! file: 'scripts/weird_thing.rb'
 ```
 
 ### Known uncovered
@@ -58,17 +61,13 @@ Add the inline comment `# uncovered` to not be alerted about it being uncovered.
 
 Prevent addition of new uncovered code, without having to cover all existing code.
 
+Alternatively mark how many lines are uncovered:
+
 ```Ruby
 SingleCov.covered! uncovered: 4
 ```
 
-### Unconventional files
-
-```Ruby
-SingleCov.covered! file: 'scripts/weird_thing.rb'
-```
-
-### Checking usage
+### Verify all code has tests & coverage
 
 ```Ruby
 # spec/coverage_spec.rb
