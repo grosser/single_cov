@@ -343,8 +343,8 @@ module SingleCov
       end
 
       # remove test extension
-      unless file_part.sub!(/_(?:test|spec)\.rb\b.*/, '.rb')
-        raise "Unable to remove test extension from #{file} ... _test.rb and _spec.rb are supported"
+      if !file_part.sub!(/_(?:test|spec)\.rb\b.*/, '.rb') && !file_part.sub!(/\/test_/, "/")
+        raise "Unable to remove test extension from #{file} ... /test_, _test.rb and _spec.rb are supported"
       end
 
       # put back the subfolder

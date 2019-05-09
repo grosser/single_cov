@@ -375,6 +375,7 @@ describe SingleCov do
       "test/lib/xyz_test.rb" => "lib/xyz.rb",
       "spec/lib/xyz_spec.rb" => "lib/xyz.rb",
       "test/xyz_test.rb" => "lib/xyz.rb",
+      "test/test_xyz.rb" => "lib/xyz.rb",
       "plugins/foo/test/lib/xyz_test.rb" => "plugins/foo/lib/xyz.rb",
       "plugins/foo/test/models/xyz_test.rb" => "plugins/foo/app/models/xyz.rb"
     }.each do |test, file|
@@ -389,7 +390,7 @@ describe SingleCov do
     end
 
     it "complains about files without test extension" do
-      message = "Unable to remove test extension from test/oops.rb ... _test.rb and _spec.rb are supported"
+      message = "Unable to remove test extension from test/oops.rb ... /test_, _test.rb and _spec.rb are supported"
       expect { file_under_test("test/oops.rb") }.to raise_error(RuntimeError, message)
     end
   end
