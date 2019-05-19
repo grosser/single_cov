@@ -1,3 +1,5 @@
+# Single Cov [![Build Status](https://travis-ci.org/grosser/single_cov.svg)](https://travis-ci.org/grosser/single_cov) [![coverage](https://img.shields.io/badge/coverage-100%25-success.svg)](https://github.com/grosser/single_cov)
+
 Actionable code coverage.
 
 ```Bash
@@ -130,5 +132,4 @@ Author
 ======
 [Michael Grosser](http://grosser.it)<br/>
 michael@grosser.it<br/>
-License: MIT<br/>
-[![Build Status](https://travis-ci.org/grosser/single_cov.svg)](https://travis-ci.org/grosser/single_cov)
+License: MIT
