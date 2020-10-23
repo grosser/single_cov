@@ -3,5 +3,7 @@ require "bundler/gem_tasks"
 require "bump/tasks"
 
 task :default do
-  sh "rspec specs/single_cov_spec.rb --warnings"
+  Bundler.with_unbundled_env do
+    sh "bundle exec rspec specs/single_cov_spec.rb --warnings"
+  end
 end
