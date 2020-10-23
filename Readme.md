@@ -128,6 +128,12 @@ tests.each do |f|
 end
 ```
 
+### Generating a coverage report
+
+```ruby
+SingleCov.coverage_report = "coverage/.resultset.json"
+```
+
 Author
 ======
 [Michael Grosser](http://grosser.it)<br/>
