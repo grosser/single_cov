@@ -6,6 +6,9 @@ module SingleCov
   UNCOVERED_COMMENT_MARKER = "uncovered"
 
   class << self
+    # enable coverage reporting, changed by forking-test-runner to combine multiple reports
+    attr_accessor :coverage_report
+
     # optionally rewrite the file we guessed with a lambda
     def rewrite(&block)
       @rewrite = block
@@ -118,7 +121,11 @@ module SingleCov
       start_coverage_recording
 
       override_at_exit do |status, _exception|
-        exit 1 if enabled? && main_process? && status == 0 && !SingleCov.all_covered?(coverage_results)
+        if enabled? && main_process? && status == 0
+          results = coverage_results
+          generate_report results
+          exit 1 unless SingleCov.all_covered?(results)
+        end
       end
     end
 
@@ -357,6 +364,22 @@ module SingleCov
 
     def root
       @root ||= (defined?(Bundler) && Bundler.root.to_s.sub(/\/gemfiles$/, '')) || Dir.pwd
+    end
+
+    def generate_report(results)
+      return unless report = coverage_report
+
+      # not a hard dependency for the whole library
+      require "json"
+      require "fileutils"
+
+      used = COVERAGES.map { |f, _| "#{root}/#{f}" }
+      covered = results.select { |k, _| used.include?(k) }
+      data = JSON.pretty_generate(
+        "Unit Tests" => {"coverage" => covered, "timestamp" => Time.now.to_i }
+      )
+      FileUtils.mkdir_p(File.dirname(report))
+      File.write report, data
     end
   end
 end

@@ -11,7 +11,6 @@ describe SingleCov do
     end
   end
 
-
   it "has a VERSION" do
     expect(SingleCov::VERSION).to match(/^[\.\da-z]+$/)
   end
@@ -245,6 +244,35 @@ describe SingleCov do
         end
       end
     end if RUBY_VERSION >= "2.5.0"
+
+    describe "generate_report" do
+      around do |t|
+        replace = "#{default_setup}\nSingleCov.coverage_report = 'coverage/.resultset.json'"
+        change_file("test/a_test.rb", default_setup, replace, &t)
+      end
+      after { FileUtils.rm_rf("coverage") }
+
+      it "generates when requested" do
+        sh "ruby test/a_test.rb"
+        result = JSON.load(File.read("coverage/.resultset.json"))
+        coverage =
+          if RUBY_VERSION > "2.5.0"
+            {"branches"=>{}, "lines"=>[1, 1, 1, nil, nil]}
+          else
+            [1, 1, 1, nil, nil]
+          end
+        expect(result["Unit Tests"]["coverage"]).to eq(
+          "#{Bundler.root}/specs/fixtures/minitest/lib/a.rb"=>coverage
+        )
+      end
+
+      it "does mot fail if file exists" do
+        Dir.mkdir("coverage") unless Dir.exist?("coverage")
+        File.write("coverage/.resultset.json", "NOT-JSON")
+        sh "ruby test/a_test.rb"
+        JSON.load(File.read("coverage/.resultset.json")) # was updated
+      end
+    end
   end
 
   describe "rspec" do
@@ -420,7 +448,8 @@ describe SingleCov do
   end
 
   def sh(command, options={})
-    result = Bundler.with_unbundled_env { `#{command} #{"2>&1" unless options[:keep_output]}` }
+    m = (Bundler.respond_to?(:with_unbundled_env) ? :with_unbundled_env : :with_clean_env)
+    result = Bundler.send(m) { `#{command} #{"2>&1" unless options[:keep_output]}` }
     raise "#{options[:fail] ? "SUCCESS" : "FAIL"} #{command}\n#{result}" if $?.success? == !!options[:fail]
     result
   end
