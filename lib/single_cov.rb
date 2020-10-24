@@ -373,10 +373,8 @@ module SingleCov
       require "json"
       require "fileutils"
 
-      used = COVERAGES.map { |f, _| "#{root}/#{f}" }
-      covered = results.select { |k, _| used.include?(k) }
       data = JSON.pretty_generate(
-        "Unit Tests" => {"coverage" => covered, "timestamp" => Time.now.to_i }
+        "Unit Tests" => {"coverage" => results, "timestamp" => Time.now.to_i }
       )
       FileUtils.mkdir_p(File.dirname(report))
       File.write report, data
