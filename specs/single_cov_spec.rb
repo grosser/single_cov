@@ -261,7 +261,18 @@ describe SingleCov do
           else
             [1, 1, 1, nil, nil]
           end
-        expect(result["Unit Tests"]["coverage"]).to eq(
+        expect(result["Minitest"]["coverage"]).to eq(
+          "#{Bundler.root}/specs/fixtures/minitest/lib/a.rb"=>coverage
+        )
+      end
+
+      it "can force line coverage" do
+        change_file("test/a_test.rb", default_setup, "#{default_setup}\nSingleCov.coverage_report_lines = true") do
+          sh "ruby test/a_test.rb"
+        end
+        result = JSON.load(File.read("coverage/.resultset.json"))
+        coverage = [1, 1, 1, nil, nil]
+        expect(result["Minitest"]["coverage"]).to eq(
           "#{Bundler.root}/specs/fixtures/minitest/lib/a.rb"=>coverage
         )
       end

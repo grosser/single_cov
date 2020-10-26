@@ -6,8 +6,11 @@ module SingleCov
   UNCOVERED_COMMENT_MARKER = "uncovered"
 
   class << self
-    # enable coverage reporting, changed by forking-test-runner to combine multiple reports
+    # enable coverage reporting: location of output file, changed by forking-test-runner to combine multiple reports
     attr_accessor :coverage_report
+
+    # emit only line coverage in coverage report for older coverage systems
+    attr_accessor :coverage_report_lines
 
     # optionally rewrite the file we guessed with a lambda
     def rewrite(&block)
@@ -375,8 +378,14 @@ module SingleCov
 
       used = COVERAGES.map { |f, _| "#{root}/#{f}" }
       covered = results.select { |k, _| used.include?(k) }
+
+      if coverage_report_lines
+        covered = covered.each_with_object({}) { |(k, v), h| h[k] = v.is_a?(Hash) ? v.fetch(:lines) : v }
+      end
+
+      # chose "Minitest" because it is what simplecov uses for reports and "Unit Tests" makes sonarqube break
       data = JSON.pretty_generate(
-        "Unit Tests" => {"coverage" => covered, "timestamp" => Time.now.to_i }
+        "Minitest" => {"coverage" => covered, "timestamp" => Time.now.to_i }
       )
       FileUtils.mkdir_p(File.dirname(report))
       File.write report, data

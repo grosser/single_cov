@@ -132,6 +132,7 @@ end
 
 ```ruby
 SingleCov.coverage_report = "coverage/.resultset.json"
+SingleCov.coverage_report_lines = true # only report line coverage for coverage systems that do not support branch coverage
 ```
 
 Author
