@@ -51,7 +51,7 @@ require 'minitest/autorun'
 SingleCov.rewrite { |f| f.sub('lib/unit/', 'app/models/') }
 
 # mark directory as being in app and not lib
-SingleCov::APP_FOLDERS << 'presenters'
+SingleCov::RAILS_APP_FOLDERS << 'presenters'
 
 # add 1-off
 SingleCov.covered! file: 'scripts/weird_thing.rb'

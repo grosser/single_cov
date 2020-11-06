@@ -2,82 +2,57 @@
 module SingleCov
   COVERAGES = []
   MAX_OUTPUT = 40
-  APP_FOLDERS = ["models", "serializers", "helpers", "controllers", "mailers", "views", "jobs", "channels"]
-  BRANCH_COVERAGE_SUPPORTED = (RUBY_VERSION >= "2.5.0")
-  UNCOVERED_COMMENT_MARKER = "uncovered"
+  RAILS_APP_FOLDERS = ["models", "serializers", "helpers", "controllers", "mailers", "views", "jobs", "channels"]
+  UNCOVERED_COMMENT_MARKER = /#.*uncovered/
 
   class << self
-    # enable coverage reporting: location of output file, changed by forking-test-runner to combine multiple reports
+    # enable coverage reporting: path to output file, changed by forking-test-runner at runtime to combine many reports
     attr_accessor :coverage_report
 
     # emit only line coverage in coverage report for older coverage systems
     attr_accessor :coverage_report_lines
 
-    # optionally rewrite the file we guessed with a lambda
+    # optionally rewrite the matching path single-cov guessed with a lambda
     def rewrite(&block)
       @rewrite = block
     end
 
+    # mark a test file as not covering anything to make assert_used pass
     def not_covered!
-      store_pid
+      main_process!
     end
 
+    # mark the file under test as needing coverage
     def covered!(file: nil, uncovered: 0)
-      file = guess_and_check_covered_file(file)
+      file = ensure_covered_file(file)
       COVERAGES << [file, uncovered]
-      store_pid
+      main_process!
     end
 
     def all_covered?(result)
-      errors = COVERAGES.map do |file, expected_uncovered|
-        if coverage = result["#{root}/#{file}"]
-          line_coverage = (coverage.is_a?(Hash) ? coverage.fetch(:lines) : coverage)
-          uncovered_lines = line_coverage.each_with_index.map { |c, i| i + 1 if c == 0 }.compact
+      errors = COVERAGES.flat_map do |file, expected_uncovered|
+        next no_coverage_error(file) unless coverage = result["#{root}/#{file}"]
 
-          branch_coverage = (coverage.is_a?(Hash) && coverage[:branches])
-          uncovered_branches = (branch_coverage ? uncovered_branches(branch_coverage, uncovered_lines) : [])
+        uncovered = uncovered(coverage)
+        next if uncovered.size == expected_uncovered
 
-          uncovered = uncovered_lines.concat uncovered_branches
-          next if uncovered.size == expected_uncovered
-
-          # ignore lines that are marked as uncovered via comments
-          # NOTE: ideally we should also warn when using uncovered but the section is indeed covered
-          content = File.readlines(file)
-          uncovered.reject! do |line_start, _, _, _|
-            content[line_start - 1].include?(UNCOVERED_COMMENT_MARKER)
-          end
-          next if uncovered.size == expected_uncovered
-
-          # branches are unsorted and added to the end, only sort when displayed
-          if branch_coverage
-            uncovered.sort_by! { |line_start, char_start, _, _| [line_start, char_start || 0] }
-          end
-
-          uncovered.map! do |line_start, char_start, line_end, char_end|
-            if char_start # branch coverage
-              if line_start == line_end
-                "#{file}:#{line_start}:#{char_start}-#{char_end}"
-              else # possibly unreachable since branches always seem to be on the same line
-                "#{file}:#{line_start}:#{char_start}-#{line_end}:#{char_end}"
-              end
-            else
-              "#{file}:#{line_start}"
-            end
-          end
-
-          warn_about_bad_coverage(file, expected_uncovered, uncovered)
-        else
-          warn_about_no_coverage(file)
+        # ignore lines that are marked as uncovered via comments
+        # TODO: warn when using uncovered but the section is indeed covered
+        content = File.readlines(file)
+        uncovered.reject! do |line_start, _, _, _|
+          content[line_start - 1].match?(UNCOVERED_COMMENT_MARKER)
         end
+        next if uncovered.size == expected_uncovered
+
+        bad_coverage_error(file, expected_uncovered, uncovered)
       end.compact
 
       return true if errors.empty?
 
-      errors = errors.join("\n").split("\n") # unify arrays with multiline strings
       errors[MAX_OUTPUT..-1] = "... coverage output truncated" if errors.size >= MAX_OUTPUT
       warn errors
 
-      errors.all? { |l| l.end_with?('?') } # ok if we just have warnings
+      errors.all? { |l| warning?(l) }
     end
 
     def assert_used(tests: default_tests)
@@ -90,7 +65,7 @@ module SingleCov
     end
 
     def assert_tested(files: glob('{app,lib}/**/*.rb'), tests: default_tests, untested: [])
-      missing = files - tests.map { |t| file_under_test(t) }
+      missing = files - tests.map { |t| guess_covered_file(t) }
       fixed = untested - missing
       missing -= untested
 
@@ -101,12 +76,9 @@ module SingleCov
       end
     end
 
-    def setup(framework, root: nil, branches: BRANCH_COVERAGE_SUPPORTED)
+    def setup(framework, root: nil, branches: true)
       if defined?(SimpleCov)
         raise "Load SimpleCov after SingleCov"
-      end
-      if branches && !BRANCH_COVERAGE_SUPPORTED
-        raise "Branch coverage needs ruby >= 2.5.0"
       end
 
       @branches = branches
@@ -140,19 +112,38 @@ module SingleCov
 
     private
 
+    def uncovered(coverage)
+      return coverage unless coverage.is_a?(Hash) # just lines
+
+      # [nil, 1, 0, 1, 0] -> [3, 5]
+      uncovered_lines = coverage.fetch(:lines)
+        .each_with_index
+        .select { |c, _| c == 0 }
+        .map { |_, i| i + 1 }
+        .compact
+
+      uncovered_branches = uncovered_branches(coverage[:branches] || {})
+      uncovered_branches.reject! { |k| uncovered_lines.include?(k[0]) } # remove duplicates
+
+      all = uncovered_lines.concat uncovered_branches
+      all.sort_by! { |line_start, char_start, _, _| [line_start, char_start || 0] } # branches are unsorted
+      all
+    end
+
     def enabled?
       (!defined?(@disabled) || !@disabled)
     end
 
-    def store_pid
-      @pid = Process.pid
+    # assuming that the main process will load all the files, we store it's pid
+    def main_process!
+      @main_process_pid = Process.pid
     end
 
     def main_process?
-      (!defined?(@pid) || @pid == Process.pid)
+      (!defined?(@main_process_pid) || @main_process_pid == Process.pid)
     end
 
-    def uncovered_branches(coverage, uncovered_lines)
+    def uncovered_branches(coverage)
       # {[branch_id] => {[branch_part] => coverage}} --> {branch_part -> sum-of-coverage}
       sum = Hash.new(0)
       coverage.each_value do |branch|
@@ -161,8 +152,7 @@ module SingleCov
         end
       end
 
-      # show missing coverage
-      sum.select! { |k, v| v == 0 && !uncovered_lines.include?(k[0]) }
+      sum.select! { |_, v| v == 0 } # keep missing coverage
       found = sum.map { |k, _| [k[0], k[1] + 1, k[2], k[3] + 1] }
       found.uniq!
       found
@@ -280,15 +270,13 @@ module SingleCov
       end
     end
 
-    def guess_and_check_covered_file(file)
-      if file&.start_with?("/")
-        raise "Use paths relative to root."
-      end
+    def ensure_covered_file(file)
+      raise "Use paths relative to project root." if file&.start_with?("/")
 
       if file
-        raise "#{file} does not exist and cannot be covered." unless File.exist?("#{root}/#{file}")
+        raise "#{file} does not exist, use paths relative to project root." unless File.exist?("#{root}/#{file}")
       else
-        file = file_under_test(caller[1])
+        file = guess_covered_file(caller[1])
         if file.start_with?("/")
           raise "Found file #{file} which is not relative to the root #{root}.\nUse `SingleCov.covered! file: 'target_file.rb'` to set covered file location."
         elsif !File.exist?("#{root}/#{file}")
@@ -299,19 +287,37 @@ module SingleCov
       file
     end
 
-    def warn_about_bad_coverage(file, expected_uncovered, uncovered_lines)
-      details = "(#{uncovered_lines.size} current vs #{expected_uncovered} configured)"
-      if expected_uncovered > uncovered_lines.size
+    def bad_coverage_error(file, expected_uncovered, uncovered)
+      details = "(#{uncovered.size} current vs #{expected_uncovered} configured)"
+      if expected_uncovered > uncovered.size
         if running_single_file?
-          "#{file} has less uncovered lines #{details}, decrement configured uncovered?"
+          warning "#{file} has less uncovered lines #{details}, decrement configured uncovered"
         end
       else
         [
           "#{file} new uncovered lines introduced #{details}",
           red("Lines missing coverage:"),
-          *uncovered_lines
-        ].join("\n")
+          *uncovered.map do |line_start, char_start, line_end, char_end|
+            if char_start # branch coverage
+              if line_start == line_end
+                "#{file}:#{line_start}:#{char_start}-#{char_end}"
+              else # possibly unreachable since branches always seem to be on the same line
+                "#{file}:#{line_start}:#{char_start}-#{line_end}:#{char_end}"
+              end
+            else
+              "#{file}:#{line_start}"
+            end
+          end
+        ]
       end
+    end
+
+    def warning(msg)
+      "#{msg}?"
+    end
+
+    def warning?(msg)
+      msg.end_with?("?")
     end
 
     def red(text)
@@ -322,17 +328,17 @@ module SingleCov
       end
     end
 
-    def warn_about_no_coverage(file)
+    def no_coverage_error(file)
       if $LOADED_FEATURES.include?("#{root}/#{file}")
         # we cannot enforce $LOADED_FEATURES during covered! since it would fail when multiple files are loaded
-        "#{file} was expected to be covered, but was already loaded before tests started, which makes it uncoverable."
+        "#{file} was expected to be covered, but was already loaded before coverage started, which makes it uncoverable."
       else
-        "#{file} was expected to be covered, but never loaded."
+        "#{file} was expected to be covered, but was never loaded."
       end
     end
 
-    def file_under_test(file)
-      file = file.dup
+    def guess_covered_file(test)
+      file = test.dup
 
       # remove caller junk to get nice error messages when something fails
       file.sub!(/\.rb\b.*/, '.rb')
@@ -350,7 +356,7 @@ module SingleCov
       end
 
       # rails things live in app
-      file_part[0...0] = if file_part =~ /^(?:#{APP_FOLDERS.map { |f| Regexp.escape(f) }.join('|')})\//
+      file_part[0...0] = if file_part =~ /^(?:#{RAILS_APP_FOLDERS.map { |f| Regexp.escape(f) }.join('|')})\//
         "app/"
       elsif file_part.start_with?("lib/") # don't add lib twice
         ""
