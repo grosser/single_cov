@@ -243,7 +243,7 @@ describe SingleCov do
           end
         end
       end
-    end if RUBY_VERSION >= "2.5.0"
+    end
 
     describe "generate_report" do
       around do |t|
@@ -255,14 +255,8 @@ describe SingleCov do
       it "generates when requested" do
         sh "ruby test/a_test.rb"
         result = JSON.load(File.read("coverage/.resultset.json"))
-        coverage =
-          if RUBY_VERSION > "2.5.0"
-            {"branches"=>{}, "lines"=>[1, 1, 1, nil, nil]}
-          else
-            [1, 1, 1, nil, nil]
-          end
         expect(result["Minitest"]["coverage"]).to eq(
-          "#{Bundler.root}/specs/fixtures/minitest/lib/a.rb"=>coverage
+          "#{Bundler.root}/specs/fixtures/minitest/lib/a.rb"=>{"branches"=>{}, "lines"=>[1, 1, 1, nil, nil]}
         )
       end
 
