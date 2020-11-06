@@ -1,6 +1,7 @@
+# frozen_string_literal: true
 require_relative "spec_helper"
 
-SingleCov.instance_variable_set(:@root, File.expand_path("../fixtures/minitest", __FILE__))
+SingleCov.instance_variable_set(:@root, File.expand_path('fixtures/minitest', __dir__))
 
 describe SingleCov do
   def self.it_does_not_complain_when_everything_is_covered
@@ -12,7 +13,7 @@ describe SingleCov do
   end
 
   it "has a VERSION" do
-    expect(SingleCov::VERSION).to match(/^[\.\da-z]+$/)
+    expect(SingleCov::VERSION).to match(/^[.\da-z]+$/)
   end
 
   describe "minitest" do
@@ -126,7 +127,7 @@ describe SingleCov do
     end
 
     it "does not complain in forks" do
-      change_file("test/a_test.rb", %{it "does a" do}, %{it "does a" do\nfork { }\n}) do
+      change_file("test/a_test.rb", %(it "does a" do), %(it "does a" do\nfork { }\n)) do
         result = sh "ruby test/a_test.rb"
         assert_tests_finished_normally(result)
         expect(result).to_not include("cover")
@@ -205,7 +206,7 @@ describe SingleCov do
           change_file("lib/a.rb", "i == 0", "i != i") do
             result = sh "ruby test/a_test.rb", fail: true
             expect(result).to include ".lib/a.rb new uncovered lines introduced (1 current vs 0 configured)"
-            expect(result).to include "lib/a.rb:3:19-23"
+            expect(result).to include "lib/a.rb:4:19-23"
           end
         end
 
@@ -214,7 +215,7 @@ describe SingleCov do
             change_file("lib/a.rb", "i == 0", "i != i") do
               result = sh "ruby test/a_test.rb 2>&1", fail: true
               expect(result).to include "lib/a.rb new uncovered lines introduced (2 current vs 0 configured)"
-              expect(result).to include "lib/a.rb:3\nlib/a.rb:6:19-23"
+              expect(result).to include "lib/a.rb:4\nlib/a.rb:7:19-23"
             end
           end
         end
@@ -223,7 +224,7 @@ describe SingleCov do
           change_file("lib/a.rb", "end", "end\ndef b\n2.times { |i| rand if i == 0 }\nend\n") do
             result = sh "ruby test/a_test.rb", fail: true
             expect(result).to include ".lib/a.rb new uncovered lines introduced (1 current vs 0 configured)"
-            expect(result).to include "lib/a.rb:6"
+            expect(result).to include "lib/a.rb:7"
           end
         end
 
@@ -231,7 +232,7 @@ describe SingleCov do
           change_file("lib/a.rb", "i == 0", "i == 0 if i if 0 if false") do
             result = sh "ruby test/a_test.rb", fail: true
             expect(result).to include ".lib/a.rb new uncovered lines introduced (3 current vs 0 configured)"
-            expect(result).to include "lib/a.rb:3:19-23\nlib/a.rb:3:19-33\nlib/a.rb:3:19-38"
+            expect(result).to include "lib/a.rb:4:19-23\nlib/a.rb:4:19-33\nlib/a.rb:4:19-38"
           end
         end
 
@@ -254,9 +255,9 @@ describe SingleCov do
 
       it "generates when requested" do
         sh "ruby test/a_test.rb"
-        result = JSON.load(File.read("coverage/.resultset.json"))
+        result = JSON.parse(File.read("coverage/.resultset.json"))
         expect(result["Minitest"]["coverage"]).to eq(
-          "#{Bundler.root}/specs/fixtures/minitest/lib/a.rb"=>{"branches"=>{}, "lines"=>[1, 1, 1, nil, nil]}
+          "#{Bundler.root}/specs/fixtures/minitest/lib/a.rb" => { "branches" => {}, "lines" => [nil, 1, 1, 1, nil, nil] }
         )
       end
 
@@ -264,10 +265,10 @@ describe SingleCov do
         change_file("test/a_test.rb", default_setup, "#{default_setup}\nSingleCov.coverage_report_lines = true") do
           sh "ruby test/a_test.rb"
         end
-        result = JSON.load(File.read("coverage/.resultset.json"))
-        coverage = [1, 1, 1, nil, nil]
+        result = JSON.parse(File.read("coverage/.resultset.json"))
+        coverage = [nil, 1, 1, 1, nil, nil]
         expect(result["Minitest"]["coverage"]).to eq(
-          "#{Bundler.root}/specs/fixtures/minitest/lib/a.rb"=>coverage
+          "#{Bundler.root}/specs/fixtures/minitest/lib/a.rb" => coverage
         )
       end
 
@@ -275,7 +276,7 @@ describe SingleCov do
         Dir.mkdir("coverage") unless Dir.exist?("coverage")
         File.write("coverage/.resultset.json", "NOT-JSON")
         sh "ruby test/a_test.rb"
-        JSON.load(File.read("coverage/.resultset.json")) # was updated
+        JSON.parse(File.read("coverage/.resultset.json")) # was updated
       end
     end
   end
@@ -292,7 +293,7 @@ describe SingleCov do
     it "does not complain in forks when disabled" do
       change_file(
         "spec/a_spec.rb",
-        %{it "does a" do}, %{it "does a" do\nfork { SingleCov.remove_instance_variable(:@pid); SingleCov.disable }\n}
+        %(it "does a" do), %{it "does a" do\nfork { SingleCov.remove_instance_variable(:@pid); SingleCov.disable }\n}
       ) do
         result = sh "bundle exec rspec spec/a_spec.rb"
         expect(result).to_not include "uncovered"
@@ -301,7 +302,7 @@ describe SingleCov do
     end
 
     it "does not complain in forks by default" do
-      change_file("spec/a_spec.rb", %{it "does a" do}, %{it "does a" do\nfork { 11 }\n}) do
+      change_file("spec/a_spec.rb", %(it "does a" do), %(it "does a" do\nfork { 11 }\n)) do
         result = sh "bundle exec rspec spec/a_spec.rb"
         assert_specs_finished_normally(result, 3)
         expect(result).to_not include "uncovered"
@@ -318,7 +319,7 @@ describe SingleCov do
       end
 
       it "does not complains when running a subset of tests by line" do
-        result = sh "bundle exec rspec spec/a_spec.rb:14"
+        result = sh "bundle exec rspec spec/a_spec.rb:15"
         assert_specs_finished_normally(result, 1)
         expect(result).to_not include "uncovered"
       end
@@ -441,18 +442,16 @@ describe SingleCov do
 
   describe ".root" do
     it "ignores when bundler root is in a gemfiles folder" do
-      begin
-        old = SingleCov.send(:root)
-        SingleCov.instance_variable_set(:@root, nil)
-        expect(Bundler).to receive(:root).and_return(Pathname.new(old + '/gemfiles'))
-        expect(SingleCov.send(:root)).to eq old
-      ensure
-        SingleCov.instance_variable_set(:@root, old)
-      end
+      old = SingleCov.send(:root)
+      SingleCov.instance_variable_set(:@root, nil)
+      expect(Bundler).to receive(:root).and_return(Pathname.new("#{old}/gemfiles"))
+      expect(SingleCov.send(:root)).to eq old
+    ensure
+      SingleCov.instance_variable_set(:@root, old)
     end
   end
 
-  def sh(command, options={})
+  def sh(command, options = {})
     m = (Bundler.respond_to?(:with_unbundled_env) ? :with_unbundled_env : :with_clean_env)
     result = Bundler.send(m) { `#{command} #{"2>&1" unless options[:keep_output]}` }
     raise "#{options[:fail] ? "SUCCESS" : "FAIL"} #{command}\n#{result}" if $?.success? == !!options[:fail]

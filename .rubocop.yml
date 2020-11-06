@@ -1,5 +1,6 @@
 AllCops:
   TargetRubyVersion: 2.5 # lowest supported version
+  NewCops: enable
 
 Style/StringLiterals:
   Enabled: false
@@ -45,10 +46,6 @@ Style/DoubleNegation:
   Enabled: false
 
 Naming/MethodParameterName:
-  Enabled: false
-
-# TODO
-Style/FrozenStringLiteralComment:
   Enabled: false
 
 # TODO: fix and change forking-test-runner too

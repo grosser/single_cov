@@ -1,5 +1,6 @@
+# frozen_string_literal: true
 name = "single_cov"
-require "./lib/#{name.gsub("-","/")}/version"
+require "./lib/#{name.gsub("-", "/")}/version"
 
 Gem::Specification.new name, SingleCov::VERSION do |s|
   s.summary = "Actionable code coverage."
