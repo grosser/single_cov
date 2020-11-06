@@ -1,0 +1,74 @@
+AllCops:
+  TargetRubyVersion: 2.5 # lowest supported version
+  NewCops: enable
+
+Style/StringLiterals:
+  Enabled: false
+
+Style/StringLiteralsInInterpolation:
+  Enabled: false
+
+Lint/AmbiguousRegexpLiteral:
+  Enabled: false
+
+Bundler/OrderedGems:
+  Enabled: false
+
+Metrics:
+  Enabled: false
+
+Style/Documentation:
+  Enabled: false
+
+Layout/EmptyLineAfterMagicComment:
+  Enabled: false
+
+Layout/EndAlignment:
+  EnforcedStyleAlignWith: variable
+
+Layout/MultilineOperationIndentation:
+  Enabled: false
+
+Layout/MultilineMethodCallIndentation:
+  EnforcedStyle: indented
+
+Style/NumericPredicate:
+  EnforcedStyle: comparison
+
+Layout/EmptyLineAfterGuardClause:
+  Enabled: false
+
+# https://github.com/rubocop-hq/rubocop/issues/5891
+Style/SpecialGlobalVars:
+  Enabled: false
+
+Style/DoubleNegation:
+  Enabled: false
+
+Naming/MethodParameterName:
+  Enabled: false
+
+# TODO: fix and change forking-test-runner too
+Style/MutableConstant:
+  Enabled: false
+
+Style/RegexpLiteral:
+  Enabled: false
+
+Layout/LineLength:
+  Enabled: false
+
+Style/IfUnlessModifier:
+  Enabled: false
+
+Style/GuardClause:
+  Enabled: false
+
+Style/InverseMethods:
+  Enabled: false
+
+Lint/AssignmentInCondition:
+  Enabled: false
+
+Style/WordArray:
+  Enabled: false

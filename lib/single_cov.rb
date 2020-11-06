@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module SingleCov
   COVERAGES = []
   MAX_OUTPUT = 40
@@ -81,7 +82,7 @@ module SingleCov
 
     def assert_used(tests: default_tests)
       bad = tests.select do |file|
-        File.read(file) !~ /SingleCov.(not_)?covered\!/
+        File.read(file) !~ /SingleCov.(not_)?covered!/
       end
       unless bad.empty?
         raise bad.map { |f| "#{f}: needs to use SingleCov.covered!" }.join("\n")
@@ -161,8 +162,8 @@ module SingleCov
       end
 
       # show missing coverage
-      sum.select! { |k, v| v.zero? && !uncovered_lines.include?(k[0]) }
-      found = sum.map { |k, _| [k[0], k[1]+1, k[2], k[3]+1] }
+      sum.select! { |k, v| v == 0 && !uncovered_lines.include?(k[0]) }
+      found = sum.map { |k, _| [k[0], k[1] + 1, k[2], k[3] + 1] }
       found.uniq!
       found
     end
@@ -178,7 +179,12 @@ module SingleCov
     # do not ask for coverage when SimpleCov already does or it conflicts
     def coverage_results
       if defined?(SimpleCov) && (result = SimpleCov.instance_variable_get(:@result))
-        result.original_result
+        result = result.original_result
+        # singlecov 1.18+ puts string "lines" into the result that we cannot read
+        if result.each_value.first.is_a?(Hash)
+          result = result.transform_values { |v| v.transform_keys(&:to_sym) }
+        end
+        result
       else
         Coverage.result
       end
@@ -191,7 +197,7 @@ module SingleCov
       if @branches
         Coverage.start(lines: true, branches: true)
       else
-        Coverage.start
+        Coverage.start(lines: true)
       end
     end
 
@@ -249,7 +255,7 @@ module SingleCov
     end
 
     def rspec_running_subset_of_tests?
-      (ARGV & ['-t', '--tag', '-e', '--example']).any? || ARGV.any? { |a| a =~ /\:\d+$|\[[\d:]+\]$/ }
+      (ARGV & ['-t', '--tag', '-e', '--example']).any? || ARGV.any? { |a| a =~ /:\d+$|\[[\d:]+\]$/ }
     end
 
     # code stolen from SimpleCov
@@ -275,7 +281,7 @@ module SingleCov
     end
 
     def guess_and_check_covered_file(file)
-      if file && file.start_with?("/")
+      if file&.start_with?("/")
         raise "Use paths relative to root."
       end
 
@@ -380,12 +386,12 @@ module SingleCov
       covered = results.select { |k, _| used.include?(k) }
 
       if coverage_report_lines
-        covered = covered.each_with_object({}) { |(k, v), h| h[k] = v.is_a?(Hash) ? v.fetch(:lines) : v }
+        covered = covered.transform_values { |v| v.is_a?(Hash) ? v.fetch(:lines) : v }
       end
 
       # chose "Minitest" because it is what simplecov uses for reports and "Unit Tests" makes sonarqube break
       data = JSON.pretty_generate(
-        "Minitest" => {"coverage" => covered, "timestamp" => Time.now.to_i }
+        "Minitest" => { "coverage" => covered, "timestamp" => Time.now.to_i }
       )
       FileUtils.mkdir_p(File.dirname(report))
       File.write report, data
