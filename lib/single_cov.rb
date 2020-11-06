@@ -178,7 +178,12 @@ module SingleCov
     # do not ask for coverage when SimpleCov already does or it conflicts
     def coverage_results
       if defined?(SimpleCov) && (result = SimpleCov.instance_variable_get(:@result))
-        result.original_result
+        result = result.original_result
+        # singlecov 1.18+ puts string "lines" into the result that we cannot read
+        if result.each_value.first.is_a?(Hash)
+          result = result.transform_values { |v| v.transform_keys(&:to_sym) }
+        end
+        result
       else
         Coverage.result
       end
@@ -191,7 +196,7 @@ module SingleCov
       if @branches
         Coverage.start(lines: true, branches: true)
       else
-        Coverage.start
+        Coverage.start(lines: true)
       end
     end
 

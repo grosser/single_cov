@@ -17,7 +17,7 @@ lib/foobar.rb:23:6-19
  - Catch coverage issues before making PRs
  - Easily add coverage enforcement for legacy apps
  - 2-5% runtime overhead on small files, compared to 20% for `SimpleCov`
- - Branch coverage on ruby 2.5+ (disable via `branches: false`)
+ - Branch coverage (disable via `branches: false`)
  - Use with [forking_test_runner](https://github.com/grosser/forking_test_runner) for per test coverage
 
 ```Ruby
