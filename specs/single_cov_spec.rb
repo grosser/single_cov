@@ -401,7 +401,7 @@ describe SingleCov do
 
   describe ".file_under_test" do
     def file_under_test(test)
-      SingleCov.send(:file_under_test, "#{SingleCov.send(:root)}/#{test}:34:in `foobar'")
+      SingleCov.send(:guess_covered_file, "#{SingleCov.send(:root)}/#{test}:34:in `foobar'")
     end
 
     {
@@ -433,9 +433,9 @@ describe SingleCov do
   # a nested gemfile was used which changed Bundler.root
   describe ".guess_and_check_covered_file" do
     it "complains nicely when calling file is outside of root" do
-      expect(SingleCov).to receive(:file_under_test).and_return('/oops/foo.rb')
+      expect(SingleCov).to receive(:guess_covered_file).and_return('/oops/foo.rb')
       expect do
-        SingleCov.send(:guess_and_check_covered_file, nil)
+        SingleCov.send(:ensure_covered_file, nil)
       end.to raise_error(RuntimeError, /Found file \/oops\/foo.rb which is not relative to the root/)
     end
   end
