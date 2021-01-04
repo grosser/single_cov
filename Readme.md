@@ -7,7 +7,7 @@ rspec spec/foobar_spec.rb
 ......
 114 example, 0 failures
 
-lib/foobar.rb new uncovered lines introduced (2 current vs 0 configured)",
+lib/foobar.rb new uncovered lines introduced (2 current vs 0 configured)
 Uncovered lines:
 lib/foobar.rb:22
 lib/foobar.rb:23:6-19
