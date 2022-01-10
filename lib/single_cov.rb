@@ -50,7 +50,7 @@ module SingleCov
       return true if errors.empty?
 
       errors[MAX_OUTPUT..-1] = "... coverage output truncated" if errors.size >= MAX_OUTPUT
-      warn errors
+      @error_logger.puts errors
 
       errors.all? { |l| warning?(l) }
     end
@@ -76,7 +76,9 @@ module SingleCov
       end
     end
 
-    def setup(framework, root: nil, branches: true)
+    def setup(framework, root: nil, branches: true, err: $stderr)
+      @error_logger = err
+
       if defined?(SimpleCov)
         raise "Load SimpleCov after SingleCov"
       end
