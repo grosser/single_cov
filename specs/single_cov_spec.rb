@@ -44,6 +44,19 @@ describe SingleCov do
       end
     end
 
+    it "can redirect output" do
+      create_file("err", "1") do
+        result = change_file "test/a_test.rb", ":minitest, ", ":minitest, err: File.open('err', 'w'), " do
+          change_file "test/a_test.rb", ".covered!", ".covered! uncovered: 3" do
+            sh "ruby test/a_test.rb"
+          end
+        end
+        assert_tests_finished_normally(result)
+        expect(result).to_not include "lib/a.rb has less uncovered lines"
+        expect(File.read("err")).to include "lib/a.rb has less uncovered lines"
+      end
+    end
+
     describe "when coverage has increased" do
       around { |t| change_file("test/a_test.rb", "SingleCov.covered!", "SingleCov.covered! uncovered: 1", &t) }
 
