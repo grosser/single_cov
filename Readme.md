@@ -1,4 +1,4 @@
-# Single Cov [![Build Status](https://travis-ci.org/grosser/single_cov.svg)](https://travis-ci.org/grosser/single_cov) [![coverage](https://img.shields.io/badge/coverage-100%25-success.svg)](https://github.com/grosser/single_cov)
+# Single Cov [![CI](https://github.com/grosser/single_cov/actions/workflows/actions.yml/badge.svg)](https://github.com/grosser/single_cov/actions?query=branch%3Amaster)
 
 Actionable code coverage.
 
