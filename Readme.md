@@ -18,15 +18,15 @@ lib/foobar.rb:23:6-19
  - Easily add coverage enforcement for legacy apps
  - 2-5% runtime overhead on small files, compared to 20% for `SimpleCov`
  - Branch coverage (disable via `branches: false`)
- - Use with [forking_test_runner](https://github.com/grosser/forking_test_runner) for per test coverage
+ - Use with [forking_test_runner](https://github.com/grosser/forking_test_runner) for exact per test coverage
 
 ```Ruby
 # Gemfile
 gem 'single_cov', group: :test
 
-# spec/spec_helper.rb ... load before loading rails / minitest / libraries
+# spec/spec_helper.rb ... load single_cov before rails, libraries, minitest, or rspec
 require 'single_cov'
-SingleCov.setup :rspec
+SingleCov.setup :rspec # or :minitest
 
 # spec/foobar_spec.rb ... add covered! call to test files
 require 'spec_helper'
@@ -35,16 +35,9 @@ SingleCov.covered!
 describe "xyz" do ...
 ```
 
-### Minitest
-
-Call setup before loading minitest.
-
-```Ruby
-SingleCov.setup :minitest
-require 'minitest/autorun'
-```
-
 ### Unfound target file
+
+Each `covered!` call expects to find a matching file, if it does not:
 
 ```Ruby
 # change all guessed paths
@@ -59,11 +52,9 @@ SingleCov.covered! file: 'scripts/weird_thing.rb'
 
 ### Known uncovered
 
-Add the inline comment `# uncovered` to not be alerted about it being uncovered.
+Add the inline comment `# uncovered` to ignore uncovered code.
 
-Prevent addition of new uncovered code, without having to cover all existing code.
-
-Alternatively mark how many lines are uncovered:
+Prevent addition of new uncovered code, without having to cover all existing code by marking how many lines are uncovered:
 
 ```Ruby
 SingleCov.covered! uncovered: 4
@@ -126,6 +117,16 @@ tests.each do |f|
     puts "Manually fix: #{f} ... output is:\n#{result}"
   end
 end
+```
+
+### Cover multiple files from a single test
+
+When a single integration test covers multiple source files.
+
+```ruby
+SingleCov.covered! file: 'app/modes/user.rb'
+SingleCov.covered! file: 'app/mailers/user_mailer.rb'
+SingleCov.covered! file: 'app/controllers/user_controller.rb'
 ```
 
 ### Generating a coverage report
