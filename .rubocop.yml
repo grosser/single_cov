@@ -1,6 +1,7 @@
 AllCops:
-  TargetRubyVersion: 2.5 # lowest supported version
+  TargetRubyVersion: 2.7 # lowest supported version
   NewCops: enable
+  SuggestExtensions: false
 
 Style/StringLiterals:
   Enabled: false
