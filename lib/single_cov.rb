@@ -38,7 +38,7 @@ module SingleCov
 
         # ignore lines that are marked as uncovered via comments
         # TODO: warn when using uncovered but the section is indeed covered
-        content = File.readlines(file)
+        content = File.readlines("#{root}/#{file}")
         uncovered.reject! do |line_start, _, _, _|
           content[line_start - 1].match?(UNCOVERED_COMMENT_MARKER)
         end
@@ -273,9 +273,8 @@ module SingleCov
     end
 
     def ensure_covered_file(file)
-      raise "Use paths relative to project root." if file&.start_with?("/")
-
       if file
+        raise "Use paths relative to project root." if file.start_with?("/")
         raise "#{file} does not exist, use paths relative to project root." unless File.exist?("#{root}/#{file}")
       else
         file = guess_covered_file(caller[1])
