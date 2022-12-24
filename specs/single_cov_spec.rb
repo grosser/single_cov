@@ -4,12 +4,16 @@ require_relative "spec_helper"
 SingleCov.instance_variable_set(:@root, File.expand_path('fixtures/minitest', __dir__))
 
 describe SingleCov do
-  def self.it_does_not_complain_when_everything_is_covered
+  def self.it_does_not_complain_when_everything_is_covered(in_test: false)
     it "does not complain when everything is covered" do
-      result = sh "ruby test/a_test.rb"
+      result = sh(in_test ? "cd test && ruby a_test.rb" : "ruby test/a_test.rb")
       assert_tests_finished_normally(result)
       expect(result).to_not include "uncovered"
     end
+  end
+
+  def add_missing_coverage(&block)
+    change_file("test/a_test.rb", "A.new.a", "1 # no test ...", &block)
   end
 
   it "has a VERSION" do
@@ -29,10 +33,15 @@ describe SingleCov do
       expect(result).to_not include "warning"
     end
 
-    it "can run from non-root" do
-      result = sh "cd test && ruby a_test.rb"
-      assert_tests_finished_normally(result)
-      expect(result).to_not include "uncovered"
+    describe "running in non-root" do
+      it_does_not_complain_when_everything_is_covered in_test: true
+
+      it "can report failure" do
+        add_missing_coverage do
+          result = sh "cd test && ruby a_test.rb", fail: true
+          expect(result).to include "uncovered"
+        end
+      end
     end
 
     # fork exists with 1 ... so our override ignores it ...
@@ -78,7 +87,7 @@ describe SingleCov do
     end
 
     describe "when something is uncovered" do
-      around { |test| change_file("test/a_test.rb", "A.new.a", "1 # no test ...", &test) }
+      around { |block| add_missing_coverage(&block) }
 
       it "complains" do
         result = sh "ruby test/a_test.rb", fail: true
