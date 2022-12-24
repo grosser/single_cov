@@ -286,7 +286,7 @@ describe SingleCov do
       end
 
       it "does mot fail if file exists" do
-        Dir.mkdir("coverage") unless Dir.exist?("coverage")
+        FileUtils.mkdir_p "coverage"
         File.write("coverage/.resultset.json", "NOT-JSON")
         sh "ruby test/a_test.rb"
         JSON.parse(File.read("coverage/.resultset.json")) # was updated
