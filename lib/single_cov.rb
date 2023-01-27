@@ -76,6 +76,26 @@ module SingleCov
       end
     end
 
+    def assert_full_coverage(tests: default_tests, currently_complete: [], currently_complete_file: "")
+      complete = tests.select { |file| File.read(file) =~ /SingleCov.covered!(\s*|\s*\#.*)$/ }
+      missing_complete = currently_complete - complete
+      newly_complete = complete - currently_complete
+      errors = []
+
+      unless missing_complete.empty?
+        errors << "The following file(s) were marked as 100% SingleCov test coverage (had no `coverage:` option) and are no longer. " +
+        "Please extend test coverage in these files to maintain 100% coverage. #{missing_complete}"
+      end
+
+      unless newly_complete.empty?
+        errors << "The following files are newly at 100% SingleCov test coverage. " +
+        "Please add the following to #{currently_complete_file} to ensure 100% coverage is maintained moving forward. " +
+        "#{newly_complete}"
+      end
+
+      raise errors.join("\n") unless errors.empty?
+    end
+
     def setup(framework, root: nil, branches: true, err: $stderr)
       @error_logger = err
 
