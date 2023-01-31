@@ -82,9 +82,9 @@ module SingleCov
       newly_complete = complete - currently_complete
       errors = []
 
-      unless missing_complete.empty?
-        errors << "The following file(s) were marked as 100% SingleCov test coverage (had no `coverage:` option) and are no longer. " +
-        "Please extend test coverage in these files to maintain 100% coverage. #{missing_complete}"
+      if missing_complete.any?
+        errors << "The following file(s) were previously marked as having 100% SingleCov test coverage (had no `coverage:` option) but are no longer marked as such.\n" +
+        "Please increase test coverage in these files to maintain 100% coverage and remove `coverage:` usage.\n#{missing_complete.join("\n")}"
       end
 
       unless newly_complete.empty?
