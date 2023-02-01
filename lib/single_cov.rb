@@ -4,6 +4,7 @@ module SingleCov
   MAX_OUTPUT = 40
   RAILS_APP_FOLDERS = ["models", "serializers", "helpers", "controllers", "mailers", "views", "jobs", "channels"]
   UNCOVERED_COMMENT_MARKER = /#.*uncovered/
+  PREFIXES_TO_IGNORE = []
 
   class << self
     # enable coverage reporting: path to output file, changed by forking-test-runner at runtime to combine many reports
@@ -356,6 +357,14 @@ module SingleCov
         raise "#{file} includes neither 'test' nor 'spec' folder ... unable to resolve"
       end
 
+      # Looking if the filedir starts with prefix that we wounld like to omit at this point (e.g. 'public' dir)
+      filenames_arr = file_part.split('/')
+      prefix = if PREFIXES_TO_IGNORE.any? && PREFIXES_TO_IGNORE.include?(filenames_arr.first)
+         filenames_arr.shift
+      end
+
+      file_part = filenames_arr.join('/')
+
       # rails things live in app
       file_part[0...0] = if file_part =~ /^(?:#{RAILS_APP_FOLDERS.map { |f| Regexp.escape(f) }.join('|')})\//
         "app/"
@@ -369,6 +378,9 @@ module SingleCov
       if !file_part.sub!(/_(?:test|spec)\.rb\b.*/, '.rb') && !file_part.sub!(/\/test_/, "/")
         raise "Unable to remove test extension from #{file} ... /test_, _test.rb and _spec.rb are supported"
       end
+
+      #put back the prefix if exists
+      file_part[0...0] = "#{prefix}/" if prefix
 
       # put back the subfolder
       file_part[0...0] = "#{subfolder}/" unless subfolder.empty?
