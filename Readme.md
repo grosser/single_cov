@@ -67,15 +67,26 @@ SingleCov.covered! uncovered: 4
 SingleCov.not_covered! # not testing any code in lib/
 
 describe "Coverage" do
-  it "does not allow new untested code" do
+  # recommended
+  it "does not allow new tests without coverage check" do
     # option :tests to pass custom Dir.glob results
     SingleCov.assert_used
   end
 
+  # recommended
   it "does not allow new untested files" do
     # option :tests and :files to pass custom Dir.glob results
     # :untested to get it passing with known untested files
     SingleCov.assert_tested
+  end
+  
+  # optional for full coverage enforcement
+  it "does not reduce full coverage" do
+    # make sure that nobody adds `uncovered: 123` to any test that did not have it before
+    # option :tests to pass custom Dir.glob results
+    # option :currently_complete for expected list of full covered tests
+    # option :location for if you store that list in a separate file
+    SingleCov.assert_full_coverage currently_complete: ["test/a_test.rb"]
   end
 end
 ```

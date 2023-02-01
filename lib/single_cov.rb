@@ -76,24 +76,30 @@ module SingleCov
       end
     end
 
-    def assert_full_coverage(tests: default_tests, currently_complete: [], message: caller(0..1)[1])
+    def assert_full_coverage(tests: default_tests, currently_complete: [], location: nil)
+      location ||= caller(0..1)[1].split(':in').first
       complete = tests.select { |file| File.read(file) =~ /SingleCov.covered!(\s*|\s*\#.*)$/ }
       missing_complete = currently_complete - complete
       newly_complete = complete - currently_complete
       errors = []
 
       if missing_complete.any?
-        errors << ("The following file(s) were previously marked as having 100% SingleCov test coverage (had no `coverage:` option) but are no longer marked as such." \
-          "Please increase test coverage in these files to maintain 100% coverage and remove `coverage:` usage. \n #{missing_complete}")
+        errors << <<~MSG
+          The following file(s) were previously marked as having 100% SingleCov test coverage (had no `coverage:` option) but are no longer marked as such.
+          Please increase test coverage in these files to maintain 100% coverage and remove `coverage:` usage.
+          #{missing_complete.join("\n")}
+        MSG
       end
 
       if newly_complete.any?
-        errors << ("The following files are newly at 100% SingleCov test coverage. " \
-          "Please add the following to #{message} to ensure 100% coverage is maintained moving forward. \n" \
-          "#{newly_complete}")
+        errors << <<~MSG
+          The following files are newly at 100% SingleCov test coverage.
+          Please add the following to #{location} to ensure 100% coverage is maintained moving forward.
+          #{newly_complete.join("\n")}
+        MSG
       end
 
-      raise errors.join("\n\n") unless errors.empty?
+      raise errors.join("\n") if errors.any?
     end
 
     def setup(framework, root: nil, branches: true, err: $stderr)

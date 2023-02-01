@@ -421,6 +421,33 @@ describe SingleCov do
     end
   end
 
+  describe ".assert_full_coverage" do
+    def call
+      SingleCov.assert_full_coverage currently_complete: complete
+    end
+
+    let(:complete) { ["test/a_test.rb"] }
+
+    around { |test| Dir.chdir("specs/fixtures/minitest", &test) }
+
+    it "works when correct files are covered" do
+      call
+    end
+
+    it "alerts when files are newly covered" do
+      expect do
+        complete.pop
+        call
+      end.to raise_error(/single_cov_spec\.rb.*test\/a_test.rb/m)
+    end
+
+    it "alerts when files lost coverage" do
+      expect do
+        change_file('test/a_test.rb', 'SingleCov.covered!', 'SingleCov.covered! uncovered: 12') { call }
+      end.to raise_error(/test\/a_test.rb/)
+    end
+  end
+
   describe ".file_under_test" do
     def file_under_test(test)
       SingleCov.send(:guess_covered_file, "#{SingleCov.send(:root)}/#{test}:34:in `foobar'")
