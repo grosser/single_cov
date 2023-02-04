@@ -33,6 +33,19 @@ describe SingleCov do
       expect(result).to_not include "warning"
     end
 
+    it "can redirect output" do
+      create_file("err", "1") do
+        result = change_file "test/a_test.rb", ":minitest, ", ":minitest, err: File.open('err', 'w'), " do
+          change_file "test/a_test.rb", ".covered!", ".covered! uncovered: 3" do
+            sh "ruby test/a_test.rb"
+          end
+        end
+        assert_tests_finished_normally(result)
+        expect(result).to_not include "lib/a.rb has less uncovered lines"
+        expect(File.read("err")).to include "lib/a.rb has less uncovered lines"
+      end
+    end
+
     describe "running in non-root" do
       it_does_not_complain_when_everything_is_covered in_test: true
 
@@ -44,25 +57,22 @@ describe SingleCov do
       end
     end
 
-    # fork exists with 1 ... so our override ignores it ...
-    it "does not complain when forking" do
-      change_file("test/a_test.rb", "assert A.new.a", "assert fork { 1 }\nsleep 0.1\n") do
-        result = sh "ruby test/a_test.rb", fail: true
-        assert_tests_finished_normally(result)
-        expect(result.scan(/missing coverage/).size).to eq 1
-      end
-    end
-
-    it "can redirect output" do
-      create_file("err", "1") do
-        result = change_file "test/a_test.rb", ":minitest, ", ":minitest, err: File.open('err', 'w'), " do
-          change_file "test/a_test.rb", ".covered!", ".covered! uncovered: 3" do
-            sh "ruby test/a_test.rb"
-          end
+    describe "fork" do
+      it "does not complain in forks" do
+        change_file("test/a_test.rb", %(it "does a" do), %(it "does a" do\nfork { }\n)) do
+          result = sh "ruby test/a_test.rb"
+          assert_tests_finished_normally(result)
+          expect(result).to_not include("cover")
         end
-        assert_tests_finished_normally(result)
-        expect(result).to_not include "lib/a.rb has less uncovered lines"
-        expect(File.read("err")).to include "lib/a.rb has less uncovered lines"
+      end
+
+      # fork exists with 1 ... so our override ignores it ...
+      it "does not complain when forking" do
+        change_file("test/a_test.rb", "assert A.new.a", "assert fork { 1 }\nsleep 0.1\n") do
+          result = sh "ruby test/a_test.rb", fail: true
+          assert_tests_finished_normally(result)
+          expect(result.scan(/missing coverage/).size).to eq 1
+        end
       end
     end
 
@@ -134,25 +144,19 @@ describe SingleCov do
       end
     end
 
-    it "complains when minitest was started before and setup will not work" do
-      change_file("test/a_test.rb", "require 'single_cov'", "require 'single_cov'\nrequire 'minitest/autorun'") do
-        result = sh "ruby test/a_test.rb", fail: true
-        expect(result).to include "Load minitest after setting up SingleCov"
+    describe "load order" do
+      it "complains when minitest was started before and setup will not work" do
+        change_file("test/a_test.rb", "require 'single_cov'", "require 'single_cov'\nrequire 'minitest/autorun'") do
+          result = sh "ruby test/a_test.rb", fail: true
+          expect(result).to include "Load minitest after setting up SingleCov"
+        end
       end
-    end
 
-    it "does not complain when minitest was loaded before setup" do
-      change_file("test/a_test.rb", "require 'single_cov'", "require 'single_cov'\nmodule Minitest;end\n") do
-        result = sh "ruby test/a_test.rb"
-        assert_tests_finished_normally(result)
-      end
-    end
-
-    it "does not complain in forks" do
-      change_file("test/a_test.rb", %(it "does a" do), %(it "does a" do\nfork { }\n)) do
-        result = sh "ruby test/a_test.rb"
-        assert_tests_finished_normally(result)
-        expect(result).to_not include("cover")
+      it "does not complain when minitest was loaded before setup" do
+        change_file("test/a_test.rb", "require 'single_cov'", "require 'single_cov'\nmodule Minitest;end\n") do
+          result = sh "ruby test/a_test.rb"
+          assert_tests_finished_normally(result)
+        end
       end
     end
 
