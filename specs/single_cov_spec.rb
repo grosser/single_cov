@@ -471,6 +471,13 @@ describe SingleCov do
       end
     end
 
+    it "can ignore a custom prefix" do
+      SingleCov::IGNORED_FILE_PREFIXES << "public"
+      expect(file_under_test("test/public/foo_test.rb")).to eq "public/foo.rb"
+    ensure
+      SingleCov::IGNORED_FILE_PREFIXES.pop
+    end
+
     it "complains about files without test folder" do
       message = "oops_test.rb includes neither 'test' nor 'spec' folder ... unable to resolve"
       expect { file_under_test("oops_test.rb") }.to raise_error(RuntimeError, message)

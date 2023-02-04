@@ -3,6 +3,7 @@ module SingleCov
   COVERAGES = []
   MAX_OUTPUT = 40
   RAILS_APP_FOLDERS = ["models", "serializers", "helpers", "controllers", "mailers", "views", "jobs", "channels"]
+  IGNORED_FILE_PREFIXES = ["lib/"]
   UNCOVERED_COMMENT_MARKER = /#.*uncovered/
 
   class << self
@@ -385,7 +386,7 @@ module SingleCov
       # rails things live in app
       file_part[0...0] = if file_part =~ /^(?:#{RAILS_APP_FOLDERS.map { |f| Regexp.escape(f) }.join('|')})\//
         "app/"
-      elsif file_part.start_with?("lib/") # don't add lib twice
+      elsif file_part.start_with?(*IGNORED_FILE_PREFIXES) # don't add lib twice
         ""
       else # everything else lives in lib
         "lib/"
