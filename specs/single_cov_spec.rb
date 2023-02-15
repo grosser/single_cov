@@ -450,6 +450,22 @@ describe SingleCov do
         change_file('test/a_test.rb', 'SingleCov.covered!', 'SingleCov.covered! uncovered: 12') { call }
       end.to raise_error(/test\/a_test.rb/)
     end
+
+    describe 'when file cannot be found from caller' do
+      let(:complete) { ["test/b_test.rb"] }
+
+      around { |test| move_file('test/a_test.rb', 'test/b_test.rb', &test) }
+
+      it "works when files covered and configured" do
+        change_file('test/b_test.rb', 'SingleCov.covered!', 'SingleCov.covered! file: lib/a.rb') { call }
+      end
+
+      it "alerts when files lost coverage and are configured" do
+        expect do
+          change_file('test/b_test.rb', 'SingleCov.covered!', 'SingleCov.covered!(uncovered: 12, file: lib/a.rb)') { call }
+        end.to raise_error(/test\/b_test.rb/)
+      end
+    end
   end
 
   describe ".file_under_test" do
