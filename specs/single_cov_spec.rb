@@ -451,6 +451,15 @@ describe SingleCov do
       end.to raise_error(/test\/a_test.rb/)
     end
 
+    it "ignores files not_covered" do
+      complete.pop
+      change_file('test/a_test.rb', 'SingleCov.covered!', 'SingleCov.not_covered!') { call }
+    end
+
+    it "ignores files with uncovered commented out" do
+      change_file('test/a_test.rb', 'SingleCov.covered!', 'SingleCov.covered! # uncovered: 12') { call }
+    end
+
     describe 'when file cannot be found from caller' do
       let(:complete) { ["test/b_test.rb"] }
 

@@ -78,7 +78,7 @@ module SingleCov
 
     def assert_full_coverage(tests: default_tests, currently_complete: [], location: nil)
       location ||= caller(0..1)[1].split(':in').first
-      complete = tests.reject { |file| File.read(file) =~ /SingleCov.covered!(.*)uncovered:(.*)$/ }
+      complete = tests.select { |file| File.read(file) =~ /SingleCov.covered!(?:(?!uncovered).)*(\s*|\s*\#.*)$/ }
       missing_complete = currently_complete - complete
       newly_complete = complete - currently_complete
       errors = []
