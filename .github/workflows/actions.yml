@@ -10,11 +10,15 @@ jobs:
     strategy:
       matrix:
         ruby: [ '2.7', '3.0', '3.1' ]
-    name: ${{ matrix.ruby }} rake
+        task: [ 'spec' ]
+        include:
+        - ruby: 2.7 # keep in sync with lowest version
+          task: rubocop
+    name: ${{ matrix.ruby }} rake ${{ matrix.task }}
     steps:
     - uses: actions/checkout@v2
     - uses: ruby/setup-ruby@v1
       with:
         ruby-version: ${{ matrix.ruby }}
         bundler-cache: true # runs 'bundle install' and caches installed gems automatically
-    - run: bundle exec rake
+    - run: bundle exec rake ${{ matrix.task }}
