@@ -72,4 +72,7 @@ Lint/AssignmentInCondition:
   Enabled: false
 
 Style/WordArray:
-  Enabled: false
+  EnforcedStyle: brackets
+
+Style/SymbolArray:
+  EnforcedStyle: brackets
