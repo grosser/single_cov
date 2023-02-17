@@ -35,7 +35,7 @@ SingleCov.covered!
 describe "xyz" do ...
 ```
 
-### Unfound target file
+### Missing target file
 
 Each `covered!` call expects to find a matching file, if it does not:
 
@@ -58,6 +58,14 @@ Prevent addition of new uncovered code, without having to cover all existing cod
 
 ```Ruby
 SingleCov.covered! uncovered: 4
+```
+
+### Making a folder not get prefixed with lib/
+
+For example packwerk components are hosted in `public` and not `lib/public`
+
+```ruby
+SingleCov::PREFIXES_TO_IGNORE << "public"
 ```
 
 ### Verify all code has tests & coverage

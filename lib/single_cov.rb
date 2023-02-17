@@ -4,7 +4,7 @@ module SingleCov
   MAX_OUTPUT = 40
   RAILS_APP_FOLDERS = ["models", "serializers", "helpers", "controllers", "mailers", "views", "jobs", "channels"]
   UNCOVERED_COMMENT_MARKER = /#.*uncovered/
-  PREFIXES_TO_IGNORE = []
+  PREFIXES_TO_IGNORE = [] # things to not prefix with lib/ etc
 
   class << self
     # enable coverage reporting: path to output file, changed by forking-test-runner at runtime to combine many reports
@@ -383,30 +383,22 @@ module SingleCov
         raise "#{file} includes neither 'test' nor 'spec' folder ... unable to resolve"
       end
 
-      # Looking if the filedir starts with prefix that we wounld like to omit at this point (e.g. 'public' dir)
-      filenames_arr = file_part.split('/')
-      prefix = if PREFIXES_TO_IGNORE.any? && PREFIXES_TO_IGNORE.include?(filenames_arr.first)
-         filenames_arr.shift
+      without_ignored_prefixes file_part do
+        # rails things live in app
+        file_part[0...0] =
+          if file_part =~ /^(?:#{RAILS_APP_FOLDERS.map { |f| Regexp.escape(f) }.join('|')})\//
+            "app/"
+          elsif file_part.start_with?("lib/") # don't add lib twice
+            ""
+          else # everything else lives in lib
+            "lib/"
+          end
+
+        # remove test extension
+        if !file_part.sub!(/_(?:test|spec)\.rb\b.*/, '.rb') && !file_part.sub!(/\/test_/, "/")
+          raise "Unable to remove test extension from #{file} ... /test_, _test.rb and _spec.rb are supported"
+        end
       end
-
-      file_part = filenames_arr.join('/')
-
-      # rails things live in app
-      file_part[0...0] = if file_part =~ /^(?:#{RAILS_APP_FOLDERS.map { |f| Regexp.escape(f) }.join('|')})\//
-        "app/"
-      elsif file_part.start_with?("lib/") # don't add lib twice
-        ""
-      else # everything else lives in lib
-        "lib/"
-      end
-
-      # remove test extension
-      if !file_part.sub!(/_(?:test|spec)\.rb\b.*/, '.rb') && !file_part.sub!(/\/test_/, "/")
-        raise "Unable to remove test extension from #{file} ... /test_, _test.rb and _spec.rb are supported"
-      end
-
-      #put back the prefix if exists
-      file_part[0...0] = "#{prefix}/" if prefix
 
       # put back the subfolder
       file_part[0...0] = "#{subfolder}/" unless subfolder.empty?
@@ -440,6 +432,19 @@ module SingleCov
       )
       FileUtils.mkdir_p(File.dirname(report))
       File.write report, data
+    end
+
+    # file_part is modified during yield so we have to make sure to also modify in place
+    def without_ignored_prefixes(file_part)
+      folders = file_part.split('/')
+      return yield unless PREFIXES_TO_IGNORE.include?(folders.first)
+
+      prefix = folders.shift
+      file_part.replace folders.join('/')
+
+      yield
+
+      file_part[0...0] = "#{prefix}/"
     end
   end
 end
