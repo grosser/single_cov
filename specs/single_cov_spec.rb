@@ -482,17 +482,39 @@ describe SingleCov do
       SingleCov.send(:guess_covered_file, "#{SingleCov.send(:root)}/#{test}:34:in `foobar'")
     end
 
-    {
-      "test/models/xyz_test.rb" => "app/models/xyz.rb",
-      "test/lib/xyz_test.rb" => "lib/xyz.rb",
-      "spec/lib/xyz_spec.rb" => "lib/xyz.rb",
-      "test/xyz_test.rb" => "lib/xyz.rb",
-      "test/test_xyz.rb" => "lib/xyz.rb",
-      "plugins/foo/test/lib/xyz_test.rb" => "plugins/foo/lib/xyz.rb",
-      "plugins/foo/test/models/xyz_test.rb" => "plugins/foo/app/models/xyz.rb"
-    }.each do |test, file|
-      it "maps #{test} to #{file}" do
-        expect(file_under_test(test)).to eq file
+    context 'with PREFIXES_TO_IGNORE has default value' do
+      {
+        "component/foo/test/public/models/xyz_test.rb" => "component/foo/lib/public/models/xyz.rb",
+        "test/models/xyz_test.rb" => "app/models/xyz.rb",
+        "test/lib/xyz_test.rb" => "lib/xyz.rb",
+        "spec/lib/xyz_spec.rb" => "lib/xyz.rb",
+        "test/xyz_test.rb" => "lib/xyz.rb",
+        "test/test_xyz.rb" => "lib/xyz.rb",
+        "plugins/foo/test/lib/xyz_test.rb" => "plugins/foo/lib/xyz.rb",
+        "plugins/foo/test/models/xyz_test.rb" => "plugins/foo/app/models/xyz.rb",
+      }.each do |test, file|
+        it "maps #{test} to #{file}" do
+          expect(file_under_test(test)).to eq file
+        end
+      end
+    end
+
+    context('with PREFIXES_TO_IGNORE set to custom directory') do
+      before { stub_const('SingleCov::PREFIXES_TO_IGNORE', ['public']) }
+
+      {
+        "component/foo/test/public/models/xyz_test.rb" => "component/foo/public/app/models/xyz.rb",
+        "test/models/xyz_test.rb" => "app/models/xyz.rb",
+        "test/lib/xyz_test.rb" => "lib/xyz.rb",
+        "spec/lib/xyz_spec.rb" => "lib/xyz.rb",
+        "test/xyz_test.rb" => "lib/xyz.rb",
+        "test/test_xyz.rb" => "lib/xyz.rb",
+        "plugins/foo/test/lib/xyz_test.rb" => "plugins/foo/lib/xyz.rb",
+        "plugins/foo/test/models/xyz_test.rb" => "plugins/foo/app/models/xyz.rb",
+      }.each do |test, file|
+        it "maps #{test} to #{file}" do
+          expect(file_under_test(test)).to eq file
+        end
       end
     end
 
