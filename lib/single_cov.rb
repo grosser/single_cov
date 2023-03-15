@@ -87,8 +87,10 @@ module SingleCov
       if missing_complete.any?
         errors << <<~MSG
           The following file(s) were previously marked as having 100% SingleCov test coverage (had no `coverage:` option) but are no longer marked as such.
-          Please increase test coverage in these files to maintain 100% coverage and remove `coverage:` usage.
           #{missing_complete.join("\n")}
+          Please increase test coverage in these files to maintain 100% coverage and remove `coverage:` usage.
+
+          If this test fails during a file removal, make it pass by removing all references to the removed file's path from the code base.
         MSG
       end
 
