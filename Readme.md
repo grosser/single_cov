@@ -68,6 +68,18 @@ For example packwerk components are hosted in `public` and not `lib/public`
 SingleCov::PREFIXES_TO_IGNORE << "public"
 ```
 
+### Missing coverage for implicit `else` in `if` or `case` statements
+
+```ruby
+# needs one test case for true and one for false (implicit else)
+raise if a == b
+
+# needs one test case for `when b` and one for `else`  (implicit else)
+case a
+when b
+end
+```
+
 ### Verify all code has tests & coverage
 
 ```Ruby

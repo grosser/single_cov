@@ -46,6 +46,24 @@ describe SingleCov do
       end
     end
 
+    it "complains about missing implicit else for if" do
+      change_file("lib/a.rb", "1", "1 if 1.to_s == '1'") do # does not work with `if true` since ruby inlines it
+        result = sh "ruby test/a_test.rb", fail: true
+        assert_tests_finished_normally(result)
+        expect(result).to include "1 current"
+        expect(result).to include "lib/a.rb:4:5-23"
+      end
+    end
+
+    it "complains about missing implicit else for case" do
+      change_file("lib/a.rb", "1", "case 1\nwhen 1 then 1\nend") do
+        result = sh "ruby test/a_test.rb", fail: true
+        assert_tests_finished_normally(result)
+        expect(result).to include "1 current"
+        expect(result).to include "lib/a.rb:4:5-6:4"
+      end
+    end
+
     describe "running in non-root" do
       it_does_not_complain_when_everything_is_covered in_test: true
 
