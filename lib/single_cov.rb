@@ -40,7 +40,7 @@ module SingleCov
         # ignore lines that are marked as uncovered via comments
         # TODO: warn when using uncovered but the section is indeed covered
         content = File.readlines("#{root}/#{file}")
-        uncovered.reject! do |line_start, _, _, _|
+        uncovered.reject! do |line_start, _, _, _, _|
           content[line_start - 1].match?(UNCOVERED_COMMENT_MARKER)
         end
         next if uncovered.size == expected_uncovered
@@ -148,11 +148,11 @@ module SingleCov
 
       uncovered_lines = indexes(coverage.fetch(:lines), 0).map! { |i| i + 1 }
       uncovered_branches = uncovered_branches(coverage[:branches] || {})
-      uncovered_branches.reject! { |k| uncovered_lines.include?(k[0]) } # ignore branch when whole line is uncovered
+      uncovered_branches.reject! { |br| uncovered_lines.include?(br[0]) } # ignore branch when whole line is uncovered
 
       # combine lines and branches while keeping them sorted
       all = uncovered_lines.concat uncovered_branches
-      all.sort_by! { |line_start, char_start, _, _| [line_start, char_start || 0] } # branches are unsorted
+      all.sort_by! { |line_start, char_start, _, _, _| [line_start, char_start || 0] } # branches are unsorted
       all
     end
 
@@ -169,18 +169,21 @@ module SingleCov
       (!defined?(@main_process_pid) || @main_process_pid == Process.pid)
     end
 
+    # {[branch_id] => {[branch_part] => coverage}} --> uncovered location
     def uncovered_branches(coverage)
-      # {[branch_id] => {[branch_part] => coverage}} --> {location -> sum-of-coverage}
-      sum = Hash.new(0)
+      sum = {}
       coverage.each_value do |branch|
-        branch.each do |part, c|
-          sum[[part[2], part[3] + 1, part[4], part[5] + 1]] += c
+        branch.filter_map do |part, c|
+          location = [part[2], part[3] + 1, part[4], part[5] + 1] # locations can be duplicated
+          type = part[0]
+          info = (sum[location] ||= [0, nil])
+          info[0] += c
+          info[1] = type if type == :else # only else is important to track since it often is not in the code
         end
       end
 
-      # show missing coverage
-      sum.select! { |_, v| v == 0 }
-      sum.keys
+      # keep location and type of missing coverage
+      sum.filter_map { |k, v| k + [v[1]] if v[0] == 0 }
     end
 
     def default_tests
@@ -325,13 +328,13 @@ module SingleCov
         [
           "#{file} new uncovered lines introduced #{details}",
           red("Lines missing coverage:"),
-          *uncovered.map do |line_start, char_start, line_end, char_end|
+          *uncovered.map do |line_start, char_start, line_end, char_end, type|
             if char_start # branch coverage
               if line_start == line_end
                 "#{file}:#{line_start}:#{char_start}-#{char_end}"
               else # possibly unreachable since branches always seem to be on the same line
                 "#{file}:#{line_start}:#{char_start}-#{line_end}:#{char_end}"
-              end
+              end + (type ? " # #{type}" : "")
             else
               "#{file}:#{line_start}"
             end

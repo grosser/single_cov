@@ -276,7 +276,15 @@ describe SingleCov do
           change_file("lib/a.rb", "i == 0", "i == 0 if i if 0 if false") do
             result = sh "ruby test/a_test.rb", fail: true
             expect(result).to include ".lib/a.rb new uncovered lines introduced (3 current vs 0 configured)"
-            expect(result).to include "lib/a.rb:4:19-23\nlib/a.rb:4:19-33\nlib/a.rb:4:19-38"
+            expect(result).to include "lib/a.rb:4:19-23\nlib/a.rb:4:19-33 # else\nlib/a.rb:4:19-38 # else"
+          end
+        end
+
+        it "complains about missing else coverage" do
+          change_file("lib/a.rb", "2.times", "1.times") do
+            result = sh "ruby test/a_test.rb", fail: true
+            expect(result).to include ".lib/a.rb new uncovered lines introduced (1 current vs 0 configured)"
+            expect(result).to include "lib/a.rb:4:19-33 # else"
           end
         end
 
