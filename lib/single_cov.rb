@@ -146,10 +146,11 @@ module SingleCov
     def uncovered(coverage)
       return coverage unless coverage.is_a?(Hash) # just lines
 
-      uncovered_lines = indexes(coverage.fetch(:lines), 0).map { |i| i + 1 }
+      uncovered_lines = indexes(coverage.fetch(:lines), 0).map! { |i| i + 1 }
       uncovered_branches = uncovered_branches(coverage[:branches] || {})
-      uncovered_branches.reject! { |k| uncovered_lines.include?(k[0]) } # remove duplicates
+      uncovered_branches.reject! { |k| uncovered_lines.include?(k[0]) } # ignore branch when whole line is uncovered
 
+      # combine lines and branches while keeping them sorted
       all = uncovered_lines.concat uncovered_branches
       all.sort_by! { |line_start, char_start, _, _| [line_start, char_start || 0] } # branches are unsorted
       all
@@ -169,18 +170,17 @@ module SingleCov
     end
 
     def uncovered_branches(coverage)
-      # {[branch_id] => {[branch_part] => coverage}} --> {branch_part -> sum-of-coverage}
+      # {[branch_id] => {[branch_part] => coverage}} --> {location -> sum-of-coverage}
       sum = Hash.new(0)
       coverage.each_value do |branch|
-        branch.each do |k, v|
-          sum[k.slice(2, 4)] += v
+        branch.each do |part, c|
+          sum[[part[2], part[3] + 1, part[4], part[5] + 1]] += c
         end
       end
 
-      sum.select! { |_, v| v == 0 } # keep missing coverage
-      found = sum.map { |k, _| [k[0], k[1] + 1, k[2], k[3] + 1] }
-      found.uniq!
-      found
+      # show missing coverage
+      sum.select! { |_, v| v == 0 }
+      sum.keys
     end
 
     def default_tests
