@@ -70,11 +70,13 @@ SingleCov::PREFIXES_TO_IGNORE << "public"
 
 ### Missing coverage for implicit `else` in `if` or `case` statements
 
+When a report shows for example `1:14-16 # else`, that indicates that the implicit else is not covered.
+
 ```ruby
-# needs one test case for true and one for false (implicit else)
+# needs 2 tests: one for `true` and one for `false`
 raise if a == b
 
-# needs one test case for `when b` and one for `else`  (implicit else)
+# needs 2 tests: one for `when b` and one for `else`
 case a
 when b
 end
