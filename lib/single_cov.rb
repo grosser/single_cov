@@ -146,13 +146,7 @@ module SingleCov
     def uncovered(coverage)
       return coverage unless coverage.is_a?(Hash) # just lines
 
-      # [nil, 1, 0, 1, 0] -> [3, 5]
-      uncovered_lines = coverage.fetch(:lines)
-        .each_with_index
-        .select { |c, _| c == 0 }
-        .map { |_, i| i + 1 }
-        .compact
-
+      uncovered_lines = indexes(coverage.fetch(:lines), 0).map { |i| i + 1 }
       uncovered_branches = uncovered_branches(coverage[:branches] || {})
       uncovered_branches.reject! { |k| uncovered_lines.include?(k[0]) } # remove duplicates
 
@@ -195,6 +189,10 @@ module SingleCov
 
     def glob(pattern)
       Dir["#{root}/#{pattern}"].map! { |f| f.sub("#{root}/", '') }
+    end
+
+    def indexes(list, find)
+      list.each_with_index.filter_map { |v, i| i if v == find }
     end
 
     # do not ask for coverage when SimpleCov already does or it conflicts
