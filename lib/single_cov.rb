@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 module SingleCov
   COVERAGES = []
-  MAX_OUTPUT = 40
+  MAX_OUTPUT = Integer(ENV["SINGLE_COV_MAX_OUTPUT"] || "40")
   RAILS_APP_FOLDERS = ["models", "serializers", "helpers", "controllers", "mailers", "views", "jobs", "channels"]
   UNCOVERED_COMMENT_MARKER = /#.*uncovered/
   PREFIXES_TO_IGNORE = [] # things to not prefix with lib/ etc
@@ -50,7 +50,9 @@ module SingleCov
 
       return true if errors.empty?
 
-      errors[MAX_OUTPUT..-1] = "... coverage output truncated" if errors.size >= MAX_OUTPUT
+      if errors.size >= MAX_OUTPUT
+        errors[MAX_OUTPUT..-1] = "... coverage output truncated (use SINGLE_COV_MAX_OUTPUT=999 to expand)"
+      end
       @error_logger.puts errors
 
       errors.all? { |l| warning?(l) }

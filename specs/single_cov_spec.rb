@@ -64,6 +64,24 @@ describe SingleCov do
       end
     end
 
+    describe "with many uncovered" do
+      around { |test| change_file("lib/a.rb", "1", "return 1 if 1 == 1\n#{100.times.map { "puts 1" }.join("\n")}", &test) }
+
+      it "truncates when too many lines are uncovered" do
+        result = sh "ruby test/a_test.rb", fail: true
+        assert_tests_finished_normally(result)
+        expect(result).to include "1 current"
+        expect(result.count("\n")).to equal 50
+      end
+
+      it "can truncate to custom length for in-depth debugging" do
+        result = sh "SINGLE_COV_MAX_OUTPUT=60 ruby test/a_test.rb", fail: true
+        assert_tests_finished_normally(result)
+        expect(result).to include "1 current"
+        expect(result.count("\n")).to equal 70
+      end
+    end
+
     describe "running in non-root" do
       it_does_not_complain_when_everything_is_covered in_test: true
 
@@ -114,7 +132,7 @@ describe SingleCov do
       end
     end
 
-    describe "when something is uncovered" do
+    describe "when single item is uncovered" do
       around { |block| add_missing_coverage(&block) }
 
       it "complains" do
