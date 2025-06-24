@@ -16,7 +16,7 @@ lib/foobar.rb:23:6-19
  - Missing coverage on every 💚 test run
  - Catch coverage issues before making PRs
  - Easily add gradual coverage enforcement for legacy apps
- - Up to 10x faster than SingleCov: 2-5% runtime overhead on small files, compared to 20%
+ - Up to 10x faster than SimpleCov: 2-5% runtime overhead on small files, compared to 20%
  - Branch coverage (disable via `branches: false`)
  - Use with [forking_test_runner](https://github.com/grosser/forking_test_runner) for exact per test coverage
 
@@ -101,7 +101,7 @@ describe "Coverage" do
     # :untested to get it passing with known untested files
     SingleCov.assert_tested
   end
-  
+
   # optional for full coverage enforcement
   it "does not reduce full coverage" do
     # make sure that nobody adds `uncovered: 123` to any test that did not have it before
