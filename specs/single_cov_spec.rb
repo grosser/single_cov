@@ -107,7 +107,7 @@ describe SingleCov do
         change_file("test/a_test.rb", "assert A.new.a", "assert fork { 1 }\nsleep 0.1\n") do
           result = sh "ruby test/a_test.rb", fail: true
           assert_tests_finished_normally(result)
-          expect(result.scan(/missing coverage/).size).to eq 1
+          expect(result.scan('missing coverage').size).to eq 1
         end
       end
     end
@@ -291,10 +291,12 @@ describe SingleCov do
         end
 
         it "does not duplicate coverage" do
-          change_file("lib/a.rb", "i == 0", "i == 0 if i if 0 if false") do
+          change_file("lib/a.rb", "i == 0", "i == 0 if i if i != i") do
             result = sh "ruby test/a_test.rb", fail: true
             expect(result).to include ".lib/a.rb new uncovered lines introduced (3 current vs 0 configured)"
-            expect(result).to include "lib/a.rb:4:19-23\nlib/a.rb:4:19-33 # else\nlib/a.rb:4:19-38 # else"
+            expect(result).to include "lib/a.rb:4:19-38 # else"
+            expect(result).to include "lib/a.rb:4:19-33 # else"
+            expect(result).to include "lib/a.rb:4:19-23"
           end
         end
 

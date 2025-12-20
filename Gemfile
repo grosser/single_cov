@@ -3,8 +3,8 @@ source "https://rubygems.org"
 gemspec
 
 gem "bump"
-gem "rake"
+gem "rake", ">= 13.2"
 gem "rspec"
-gem "minitest", "~> 5.0"
+gem "minitest", "~> 6.0"
 gem "simplecov"
-gem "rubocop"
+gem "rubocop", "~> 1.69"
