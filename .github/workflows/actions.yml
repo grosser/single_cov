@@ -11,12 +11,16 @@ jobs:
       matrix:
         ruby: [ '3.2', '3.3', '3.4' ]
         task: [ 'spec' ]
+        gemfile: [ 'Gemfile', 'gemfiles/minitest5.gemfile' ]
         include:
         - ruby: 3.2 # keep in sync with the lowest ruby version, .rubocop.yml, single_cov.gemspec
           task: rubocop
-    name: ${{ matrix.ruby }} rake ${{ matrix.task }}
+          gemfile: Gemfile
+    name: ${{ matrix.ruby }}+${{ matrix.gemfile }} rake ${{ matrix.task }}
+    env:
+      BUNDLE_GEMFILE: ${{ matrix.gemfile }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v6
     - uses: ruby/setup-ruby@v1
       with:
         ruby-version: ${{ matrix.ruby }}

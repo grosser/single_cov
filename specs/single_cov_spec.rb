@@ -16,6 +16,12 @@ describe SingleCov do
     change_file("test/a_test.rb", "A.new.a", "1 # no test ...", &block)
   end
 
+  let(:project_root) do
+    root = Bundler.root.to_s
+    root.sub!("/gemfiles", "") || raise if ENV["BUNDLE_GEMFILE"]&.include?("gemfiles/")
+    root
+  end
+
   it "has a VERSION" do
     expect(SingleCov::VERSION).to match(/^[.\da-z]+$/)
   end
@@ -160,6 +166,9 @@ describe SingleCov do
       end
 
       it "does not complain when only running selected tests via line number" do
+        # somehow does not work with BUNDLE_GEMFILE set, but works with minitest 5 and 6 when tested manually
+        next if ENV["BUNDLE_GEMFILE"]&.include?("/gemfiles")
+
         result = sh "bin/rails test test/a_test.rb:12"
         assert_tests_finished_normally(result)
         expect(result).to_not include "uncovered"
@@ -178,20 +187,19 @@ describe SingleCov do
           sh "ruby test/a_test.rb"
         end
       end
-    end
 
-    describe "load order" do
-      it "complains when minitest was started before and setup will not work" do
-        change_file("test/a_test.rb", "require 'single_cov'", "require 'single_cov'\nrequire 'minitest/autorun'") do
-          result = sh "ruby test/a_test.rb", fail: true
-          expect(result).to include "Load minitest after setting up SingleCov"
-        end
+      it "complains with minitest executable" do
+        next unless Gem::Specification.find_all_by_name("minitest").any? { |s| s.version >= "6.0.0" }
+        result = sh "bundle exec minitest test/a_test.rb", fail: true
+        assert_tests_finished_normally(result)
+        expect(result).to include "uncovered"
       end
 
-      it "does not complain when minitest was loaded before setup" do
-        change_file("test/a_test.rb", "require 'single_cov'", "require 'single_cov'\nmodule Minitest;end\n") do
-          result = sh "ruby test/a_test.rb"
+      it "complains with minitest loaded before" do
+        change_file("test/a_test.rb", "require 'single_cov'", "require 'minitest/autorun'; require 'single_cov'") do
+          result = sh "ruby test/a_test.rb", fail: true
           assert_tests_finished_normally(result)
+          expect(result).to include "uncovered"
         end
       end
     end
@@ -335,7 +343,7 @@ describe SingleCov do
         sh "ruby test/a_test.rb"
         result = JSON.parse(File.read("coverage/.resultset.json"))
         expect(result["Minitest"]["coverage"]).to eq(
-          "#{Bundler.root}/specs/fixtures/minitest/lib/a.rb" => { "branches" => {}, "lines" => [nil, 1, 1, 1, nil, nil] }
+          "#{project_root}/specs/fixtures/minitest/lib/a.rb" => { "branches" => {}, "lines" => [nil, 1, 1, 1, nil, nil] }
         )
       end
 
@@ -346,7 +354,7 @@ describe SingleCov do
         result = JSON.parse(File.read("coverage/.resultset.json"))
         coverage = [nil, 1, 1, 1, nil, nil]
         expect(result["Minitest"]["coverage"]).to eq(
-          "#{Bundler.root}/specs/fixtures/minitest/lib/a.rb" => coverage
+          "#{project_root}/specs/fixtures/minitest/lib/a.rb" => coverage
         )
       end
 
