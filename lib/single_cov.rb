@@ -159,7 +159,7 @@ module SingleCov
     end
 
     def enabled?
-      (!defined?(@disabled) || !@disabled)
+      !defined?(@disabled) || !@disabled
     end
 
     # assuming that the main process will load all the files, we store it's pid
@@ -168,7 +168,7 @@ module SingleCov
     end
 
     def main_process?
-      (!defined?(@main_process_pid) || @main_process_pid == Process.pid)
+      !defined?(@main_process_pid) || @main_process_pid == Process.pid
     end
 
     # {[branch_id] => {[branch_part] => coverage}} --> uncovered location
@@ -263,14 +263,14 @@ module SingleCov
     # do not record or verify when only running selected tests since it would be missing data
     def minitest_running_subset_of_tests?
       # via direct option (ruby test.rb -n /foo/)
-      (ARGV.map { |a| a.split('=', 2).first } & ['-n', '--name', '-l', '--line']).any? ||
+      ARGV.map { |a| a.split('=', 2).first }.intersect?(['-n', '--name', '-l', '--line']) ||
 
       # via testrbl or mtest or rails with direct line number (mtest test.rb:123)
       (ARGV.first =~ /:\d+\Z/) ||
 
       # via rails test which preloads mintest, removes ARGV and fills options
       (
-        defined?(Minitest) &&
+
         defined?(Minitest.reporter) &&
         Minitest.reporter &&
         (reporter = Minitest.reporter.reporters.first) &&
@@ -279,7 +279,7 @@ module SingleCov
     end
 
     def rspec_running_subset_of_tests?
-      (ARGV & ['-t', '--tag', '-e', '--example']).any? || ARGV.any? { |a| a =~ /:\d+$|\[[\d:]+\]$/ }
+      ARGV.intersect?(['-t', '--tag', '-e', '--example']) || ARGV.any? { |a| a =~ /:\d+$|\[[\d:]+\]$/ }
     end
 
     # code stolen from SimpleCov
@@ -400,7 +400,7 @@ module SingleCov
           end
 
         # remove test extension
-        if !file_part.sub!(/_(?:test|spec)\.rb\b.*/, '.rb') && !file_part.sub!(/\/test_/, "/")
+        if !file_part.sub!(/_(?:test|spec)\.rb\b.*/, '.rb') && !file_part.sub!('/test_', "/")
           raise "Unable to remove test extension from #{file} ... /test_, _test.rb and _spec.rb are supported"
         end
       end
@@ -425,7 +425,7 @@ module SingleCov
       require "fileutils"
 
       used = COVERAGES.map { |f, _| "#{root}/#{f}" }
-      covered = results.select { |k, _| used.include?(k) }
+      covered = results.slice(*used)
 
       if coverage_report_lines
         covered = covered.transform_values { |v| v.is_a?(Hash) ? v.fetch(:lines) : v }

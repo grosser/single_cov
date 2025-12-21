@@ -1,5 +1,5 @@
 AllCops:
-  TargetRubyVersion: 2.7 # lowest supported version
+  TargetRubyVersion: 3.2 # lowest supported version, keep in sync with .github/workflows/actions.yml, single_cov.gemspec
   NewCops: enable
   SuggestExtensions: false
 
