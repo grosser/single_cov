@@ -13,7 +13,8 @@ GEM
     json (2.18.0)
     language_server-protocol (3.17.0.5)
     lint_roller (1.1.0)
-    minitest (5.27.0)
+    minitest (6.0.0)
+      prism (~> 1.5)
     parallel (1.27.0)
     parser (3.3.10.0)
       ast (~> 2.4.1)
@@ -66,7 +67,7 @@ PLATFORMS
 
 DEPENDENCIES
   bump
-  minitest (~> 5.0)
+  minitest
   rake
   rspec
   rubocop
@@ -74,4 +75,4 @@ DEPENDENCIES
   single_cov!
 
 BUNDLED WITH
-   2.4.1
+  4.0.2

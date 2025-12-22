@@ -12,3 +12,13 @@ end
 task :rubocop do
   sh "bundle exec rubocop"
 end
+
+desc "bundle all gemfiles CMD=install"
+task :bundle do
+  extra = ENV["CMD"] || "install"
+  Bundler.with_original_env do
+    Dir["{Gemfile,gemfiles/*.gemfile}"].reverse.each do |gemfile|
+      sh "BUNDLE_GEMFILE=#{gemfile} bundle #{extra}"
+    end
+  end
+end

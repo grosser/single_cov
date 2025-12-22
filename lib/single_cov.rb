@@ -119,7 +119,6 @@ module SingleCov
 
       case framework
       when :minitest
-        minitest_should_not_be_running!
         return if minitest_running_subset_of_tests?
       when :rspec
         return if rspec_running_subset_of_tests?
@@ -129,13 +128,29 @@ module SingleCov
 
       start_coverage_recording
 
-      override_at_exit do |status, _exception|
-        if enabled? && main_process? && status == 0
-          results = coverage_results
-          generate_report results
-          exit 1 unless SingleCov.all_covered?(results)
+      # minitest overrides at_exit, so we need to hack into it to get after it
+      # if it is not already loaded we could get in front of it, but when using `minitest` executable that is
+      # not possible
+      if defined?(Minitest)
+        (class << Minitest; self; end).prepend(Module.new do
+          def run(*)
+            result = super
+            SingleCov.report_at_exit
+            result
+          end
+        end)
+      else
+        override_at_exit do |status, _exception|
+          report_at_exit if main_process? && status == 0
         end
       end
+    end
+
+    def report_at_exit
+      return unless enabled?
+      results = coverage_results
+      generate_report results
+      exit 1 unless SingleCov.all_covered?(results)
     end
 
     # use this in forks when using rspec to silence duplicated output
@@ -230,51 +245,20 @@ module SingleCov
       COVERAGES.size == 1
     end
 
-    # we cannot insert our hooks when minitest is already running
-    def minitest_should_not_be_running!
-      return unless defined?(Minitest)
-      return unless Minitest.class_variable_defined?(:@@installed_at_exit)
-      return unless Minitest.class_variable_get(:@@installed_at_exit)
-
-      # untested
-      # https://github.com/rails/rails/pull/26515 rails loads autorun before test
-      # but it works out for some reason
-      return if Minitest.extensions.include?('rails')
-
-      # untested
-      # forking test runner does some hacky acrobatics to fake minitest status
-      # and the resets it ... works out ok in the end ...
-      return if faked_by_forking_test_runner?
-
-      # ... but only if it's used with `--merge-coverage` otherwise the coverage reporting is useless
-      if $0.end_with?("/forking-test-runner")
-        raise "forking-test-runner only work with single_cov when using --merge-coverage"
-      end
-
-      raise "Load minitest after setting up SingleCov"
-    end
-
-    # ForkingTestRunner fakes an initialized minitest to avoid multiple hooks being installed
-    # so hooks still get added in order https://github.com/grosser/forking_test_runner/pull/4
-    def faked_by_forking_test_runner?
-      defined?(Coverage) && Coverage.respond_to?(:capture_coverage!)
-    end
-
     # do not record or verify when only running selected tests since it would be missing data
     def minitest_running_subset_of_tests?
       # via direct option (ruby test.rb -n /foo/)
       ARGV.map { |a| a.split('=', 2).first }.intersect?(['-n', '--name', '-l', '--line']) ||
 
-      # via testrbl or mtest or rails with direct line number (mtest test.rb:123)
+      # via testrbl, mtest, rails, or minitest with direct line number (mtest test.rb:123)
       (ARGV.first =~ /:\d+\Z/) ||
 
       # via rails test which preloads mintest, removes ARGV and fills options
       (
-
         defined?(Minitest.reporter) &&
         Minitest.reporter &&
         (reporter = Minitest.reporter.reporters.first) &&
-        reporter.options[:filter]
+        (reporter.options[:filter] || reporter.options[:include]) # MT 5 vs MT 6
       )
     end
 
