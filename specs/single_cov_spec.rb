@@ -597,7 +597,7 @@ describe SingleCov do
 
   def change_file(file, find, replace)
     old = File.read(file)
-    raise "Did not find #{find} in:\n#{old}" unless new = old.dup.sub!(find, replace)
+    raise "Did not find #{find} in:\n#{old}" unless (new = old.dup.sub!(find, replace))
     File.write(file, new)
     yield
   ensure

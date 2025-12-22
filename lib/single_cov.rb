@@ -32,7 +32,7 @@ module SingleCov
 
     def all_covered?(result)
       errors = COVERAGES.flat_map do |file, expected_uncovered|
-        next no_coverage_error(file) unless coverage = result["#{root}/#{file}"]
+        next no_coverage_error(file) unless (coverage = result["#{root}/#{file}"])
 
         uncovered = uncovered(coverage)
         next if uncovered.size == expected_uncovered
@@ -418,7 +418,7 @@ module SingleCov
     end
 
     def generate_report(results)
-      return unless report = coverage_report
+      return unless (report = coverage_report)
 
       # not a hard dependency for the whole library
       require "json"
