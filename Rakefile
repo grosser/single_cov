@@ -6,10 +6,7 @@ require "bump/tasks"
 task default: [:spec, :rubocop]
 
 task :spec do
-  m = (Bundler.respond_to?(:with_unbundled_env) ? :with_unbundled_env : :with_clean_env)
-  Bundler.send(m) do
-    sh "bundle exec rspec specs/single_cov_spec.rb --warnings"
-  end
+  sh "bundle exec rspec specs/single_cov_spec.rb --warnings"
 end
 
 task :rubocop do
