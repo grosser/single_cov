@@ -2,6 +2,9 @@ AllCops:
   TargetRubyVersion: 3.2 # lowest supported version, keep in sync with .github/workflows/actions.yml, single_cov.gemspec
   NewCops: enable
   SuggestExtensions: false
+  Exclude:
+  - vendor/**/*
+  - gemfiles/vendor/bundle/**/*
 
 Style/StringLiterals:
   Enabled: false
@@ -68,11 +71,12 @@ Style/GuardClause:
 Style/InverseMethods:
   Enabled: false
 
-Lint/AssignmentInCondition:
-  Enabled: false
-
 Style/WordArray:
   EnforcedStyle: brackets
 
 Style/SymbolArray:
   EnforcedStyle: brackets
+
+# we use the gemspec as a shared gem list
+Gemspec/DevelopmentDependencies:
+  Enabled: false

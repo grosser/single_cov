@@ -590,15 +590,14 @@ describe SingleCov do
   end
 
   def sh(command, options = {})
-    m = (Bundler.respond_to?(:with_unbundled_env) ? :with_unbundled_env : :with_clean_env)
-    result = Bundler.send(m) { `#{command} #{"2>&1" unless options[:keep_output]}` }
+    result = `#{command} #{"2>&1" unless options[:keep_output]}`
     raise "#{options[:fail] ? "SUCCESS" : "FAIL"} #{command}\n#{result}" if $?.success? == !!options[:fail]
     result
   end
 
   def change_file(file, find, replace)
     old = File.read(file)
-    raise "Did not find #{find} in:\n#{old}" unless new = old.dup.sub!(find, replace)
+    raise "Did not find #{find} in:\n#{old}" unless (new = old.dup.sub!(find, replace))
     File.write(file, new)
     yield
   ensure
