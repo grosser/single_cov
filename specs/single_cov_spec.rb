@@ -229,14 +229,16 @@ describe SingleCov do
       it "works" do
         result = sh "ruby test/a_test.rb"
         assert_tests_finished_normally(result)
-        expect(result).to include "3 / 3 LOC (100.0%) covered" # SimpleCov
+        expect(result).to include "Coverage report generated" # SimpleCov
+        expect(result).to include "Line Coverage: 100.0% (3 / 3)" # SimpleCov
       end
 
       it "complains when coverage is bad" do
         change_file 'lib/a.rb', "def a", "def b\n1\nend\ndef a" do
           result = sh "ruby test/a_test.rb", fail: true
           assert_tests_finished_normally(result)
-          expect(result).to include "4 / 5 LOC (80.0%) covered" # SimpleCov
+          expect(result).to include "Coverage report generated" # SimpleCov
+          expect(result).to include "Line Coverage: 80.0% (4 / 5)" # SimpleCov
           expect(result).to include "(1 current vs 0 configured)" # SingleCov
         end
       end
