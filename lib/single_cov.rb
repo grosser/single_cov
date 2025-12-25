@@ -119,7 +119,7 @@ module SingleCov
 
       case framework
       when :minitest
-        return if minitest_running_subset_of_tests?
+        return if minitest_running_subset_of_tests?(ARGV)
       when :rspec
         return if rspec_running_subset_of_tests?
       else
@@ -128,14 +128,16 @@ module SingleCov
 
       start_coverage_recording
 
-      # minitest overrides at_exit, so we need to hack into it to get after it
-      # if it is not already loaded we could get in front of it, but when using `minitest` executable that is
-      # not possible
+      # minitest overrides at_exit, so we need to get into it to execute after it finishes
+      # so when using the `minitest` executable or loading minitest before SingleCov the first branch is used
       if defined?(Minitest)
         (class << Minitest; self; end).prepend(Module.new do
-          def run(*)
+          def run(args = [])
+            original_args = args.dup # minitest modified them
             result = super
-            SingleCov.report_at_exit
+            unless SingleCov.send(:minitest_running_subset_of_tests?, original_args)
+              SingleCov.report_at_exit
+            end
             result
           end
         end)
@@ -246,12 +248,13 @@ module SingleCov
     end
 
     # do not record or verify when only running selected tests since it would be missing data
-    def minitest_running_subset_of_tests?
+    def minitest_running_subset_of_tests?(argv)
       # via direct option (ruby test.rb -n /foo/)
-      ARGV.map { |a| a.split('=', 2).first }.intersect?(['-n', '--name', '-l', '--line']) ||
+      # or `minitest foo.rb:123` which is translated to -n
+      argv.map { |a| a.split('=', 2).first }.intersect?(['-n', '--name', '-l', '--line']) ||
 
-      # via testrbl, mtest, rails, or minitest with direct line number (mtest test.rb:123)
-      (ARGV.first =~ /:\d+\Z/) ||
+      # via testrbl, mtest, or rails with direct line number (mtest test.rb:123)
+      (argv.first =~ /:\d+\Z/) ||
 
       # via rails test which preloads mintest, removes ARGV and fills options
       (

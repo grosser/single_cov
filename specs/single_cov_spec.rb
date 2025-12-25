@@ -188,18 +188,37 @@ describe SingleCov do
         end
       end
 
-      it "complains with minitest executable" do
-        next unless Gem::Specification.find_all_by_name("minitest").any? { |s| s.version >= "6.0.0" }
-        result = sh "bundle exec minitest test/a_test.rb", fail: true
-        assert_tests_finished_normally(result)
-        expect(result).to include "uncovered"
-      end
-
       it "complains with minitest loaded before" do
         change_file("test/a_test.rb", "require 'single_cov'", "require 'minitest/autorun'; require 'single_cov'") do
           result = sh "ruby test/a_test.rb", fail: true
           assert_tests_finished_normally(result)
           expect(result).to include "uncovered"
+        end
+      end
+
+      describe "with minitest executable" do
+        around do |t|
+          next unless Gem::Specification.find_all_by_name("minitest").any? { |s| s.version >= "6.0.0" }
+          t.call
+        end
+
+        it "complains" do
+          result = sh "minitest test/a_test.rb", fail: true
+          assert_tests_finished_normally(result)
+          expect(result).to include "uncovered"
+        end
+
+        # NOTE: will return "" and fail if no line was matched when running as non-tty
+        # since minitest uses exit! and that does not print withot $stdout.sync = true
+        # see https://github.com/minitest/minitest/issues/1046
+        it "does not complain when filtering line" do
+          result = sh "minitest test/a_test.rb:22"
+          assert_tests_finished_normally(result)
+        end
+
+        it "does not complain when filtering name" do
+          result = sh "minitest test/a_test.rb -n /does/"
+          assert_tests_finished_normally(result)
         end
       end
     end
@@ -597,9 +616,9 @@ describe SingleCov do
     end
   end
 
-  def sh(command, options = {})
-    result = `#{command} #{"2>&1" unless options[:keep_output]}`
-    raise "#{options[:fail] ? "SUCCESS" : "FAIL"} #{command}\n#{result}" if $?.success? == !!options[:fail]
+  def sh(command, fail: false)
+    result = `#{command} 2>&1`
+    raise "#{fail ? "SUCCESS" : "FAIL"} #{command}\n#{result}" if $?.success? == fail
     result
   end
 
