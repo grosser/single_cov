@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ruby: [ '3.2', '3.3', '3.4' ]
+        ruby: [ '3.2', '3.3', '3.4', '4.0' ]
         task: [ 'spec' ]
         gemfile: [ 'Gemfile', 'gemfiles/minitest5.gemfile' ]
         include:
