@@ -220,6 +220,14 @@ describe SingleCov do
           result = sh "minitest test/a_test.rb -n /does/"
           assert_tests_finished_normally(result)
         end
+
+        it "does not complain when test failed" do
+          change_file("test/a_test.rb", "assert", "refute") do
+            result = sh "minitest test/a_test.rb", fail: true
+            expect(result).to include "1 runs, 1 assertions, 1 failures"
+            expect(result).to_not include "uncovered"
+          end
+        end
       end
     end
 

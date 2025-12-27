@@ -135,15 +135,17 @@ module SingleCov
           def run(args = [])
             original_args = args.dup # minitest modified them
             result = super
-            unless SingleCov.send(:minitest_running_subset_of_tests?, original_args)
-              SingleCov.report_at_exit
+            if result && !SingleCov.send(:minitest_running_subset_of_tests?, original_args)
+              return SingleCov.report_at_exit
             end
             result
           end
         end)
       else
         override_at_exit do |status, _exception|
-          report_at_exit if main_process? && status == 0
+          if main_process? && status == 0 && !report_at_exit
+            exit 1
+          end
         end
       end
     end
@@ -152,7 +154,7 @@ module SingleCov
       return unless enabled?
       results = coverage_results
       generate_report results
-      exit 1 unless SingleCov.all_covered?(results)
+      SingleCov.all_covered?(results)
     end
 
     # use this in forks when using rspec to silence duplicated output
