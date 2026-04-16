@@ -188,6 +188,22 @@ describe SingleCov do
         end
       end
 
+      describe ":nocov:" do
+        it "does not complain when inside :nocov: block" do
+          change_file("lib/a.rb", "1", "1\n# :nocov:\ndef b\n2\nend\n# :nocov:") do
+            sh "ruby test/a_test.rb"
+          end
+        end
+
+        it "complains when not inside :nocov: block" do
+          change_file("lib/a.rb", "1", "1\n# :nocov:\n# :nocov:\ndef b\n2\nend") do
+            result = sh "ruby test/a_test.rb", fail: true
+            assert_tests_finished_normally(result)
+            expect(result).to include "uncovered"
+          end
+        end
+      end
+
       it "complains with minitest loaded before" do
         change_file("test/a_test.rb", "require 'single_cov'", "require 'minitest/autorun'; require 'single_cov'") do
           result = sh "ruby test/a_test.rb", fail: true
