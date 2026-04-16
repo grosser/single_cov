@@ -4,6 +4,7 @@ module SingleCov
   MAX_OUTPUT = Integer(ENV["SINGLE_COV_MAX_OUTPUT"] || "40")
   RAILS_APP_FOLDERS = ["models", "serializers", "helpers", "controllers", "mailers", "views", "jobs", "channels"]
   UNCOVERED_COMMENT_MARKER = /#.*uncovered/
+  NOCOV_MARKER = /^\s*#\s*:nocov:/ # see https://github.com/simplecov-ruby/simplecov/blob/00376ea2f29ce7a7355b7c2d7d094b666b57cb9b/lib/simplecov/lines_classifier.rb#L16
   PREFIXES_TO_IGNORE = [] # things to not prefix with lib/ etc
 
   class << self
@@ -40,8 +41,10 @@ module SingleCov
         # ignore lines that are marked as uncovered via comments
         # TODO: warn when using uncovered but the section is indeed covered
         content = File.readlines("#{root}/#{file}")
+        nocov_lines_nums = nocov_line_numbers(content)
         uncovered.reject! do |line_start, _, _, _, _|
-          content[line_start - 1].match?(UNCOVERED_COMMENT_MARKER)
+          content[line_start - 1].match?(UNCOVERED_COMMENT_MARKER) ||
+            nocov_lines_nums.include?(line_start)
         end
         next if uncovered.size == expected_uncovered
 
@@ -213,6 +216,19 @@ module SingleCov
 
     def glob(pattern)
       Dir["#{root}/#{pattern}"].map! { |f| f.sub("#{root}/", '') }
+    end
+
+    # @returns [Integer] 1-based line numbers that are inside :nocov: blocks
+    def nocov_line_numbers(content)
+      inside = false
+      content.each_with_index.filter_map do |line, index|
+        if line.match?(NOCOV_MARKER)
+          inside = !inside # toggle
+          nil # line itself cannot be uncovered since it is only a comment
+        elsif inside
+          index + 1
+        end
+      end
     end
 
     def indexes(list, find)
