@@ -5,6 +5,9 @@ module SingleCov
   RAILS_APP_FOLDERS = ["models", "serializers", "helpers", "controllers", "mailers", "views", "jobs", "channels"]
   UNCOVERED_COMMENT_MARKER = /#.*uncovered/
   NOCOV_MARKER = /^\s*#\s*:nocov:/ # see https://github.com/simplecov-ruby/simplecov/blob/00376ea2f29ce7a7355b7c2d7d094b666b57cb9b/lib/simplecov/lines_classifier.rb#L16
+  SIMPLECOV_DISABLE_MARKER = /#\s*simplecov:disable\b/ # see https://github.com/simplecov-ruby/simplecov/blob/main/docs/Configuration.md#ignoringskipping-code
+  SIMPLECOV_DISABLE_BLOCK_MARKER = /^\s*#\s*simplecov:disable\b/
+  SIMPLECOV_ENABLE_BLOCK_MARKER = /^\s*#\s*simplecov:enable\b/
   PREFIXES_TO_IGNORE = [] # things to not prefix with lib/ etc
 
   class << self
@@ -43,7 +46,9 @@ module SingleCov
         content = File.readlines("#{root}/#{file}")
         nocov_lines_nums = nocov_line_numbers(content)
         uncovered.reject! do |line_start, _, _, _, _|
-          content[line_start - 1].match?(UNCOVERED_COMMENT_MARKER) ||
+          line = content[line_start - 1]
+          line.match?(UNCOVERED_COMMENT_MARKER) ||
+            line.match?(SIMPLECOV_DISABLE_MARKER) || # inline, block markers are comments and never uncovered
             nocov_lines_nums.include?(line_start)
         end
         next if uncovered.size == expected_uncovered
@@ -218,14 +223,24 @@ module SingleCov
       Dir["#{root}/#{pattern}"].map! { |f| f.sub("#{root}/", '') }
     end
 
-    # @returns [Integer] 1-based line numbers that are inside :nocov: blocks
+    # @returns [Integer] 1-based line numbers that are inside :nocov: or simplecov:disable blocks
+    # categories (line/branch/method) are ignored, every disable ignores lines and branches
+    # unclosed simplecov:disable runs until end of file, like simplecov
     def nocov_line_numbers(content)
-      inside = false
+      nocov = false
+      disabled = false
       content.each_with_index.filter_map do |line, index|
+        # marker lines themselves cannot be uncovered since they are only comments
         if line.match?(NOCOV_MARKER)
-          inside = !inside # toggle
-          nil # line itself cannot be uncovered since it is only a comment
-        elsif inside
+          nocov = !nocov # toggle
+          nil
+        elsif line.match?(SIMPLECOV_DISABLE_BLOCK_MARKER)
+          disabled = true
+          nil
+        elsif line.match?(SIMPLECOV_ENABLE_BLOCK_MARKER)
+          disabled = false
+          nil
+        elsif nocov || disabled
           index + 1
         end
       end
