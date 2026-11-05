@@ -52,15 +52,19 @@ SingleCov.covered! file: 'scripts/weird_thing.rb'
 
 ### Known uncovered
 
-- Option 1: Add the inline comment `# uncovered` to ignore uncovered code
-- Option 2: Use `# :nocov:` markers to ignore blocks of code (same syntax as [SimpleCov](https://github.com/simplecov-ruby/simplecov?tab=readme-ov-file#ignoringskipping-code)).
+- Option 1: Add the inline comment `# uncovered` or `# simplecov:disable` to ignore uncovered code
+- Option 2: Use `# simplecov:disable` / `# simplecov:enable` markers to ignore blocks of code
+  (same syntax as [SimpleCov](https://github.com/simplecov-ruby/simplecov/blob/main/docs/Configuration.md#ignoringskipping-code))
+  - categories (`line`, `branch`, `method`) are not supported, every disable ignores lines and branches
+  - a `# simplecov:disable` without `# simplecov:enable` ignores until the end of the file
+- Option 3 (legacy): Use `# :nocov:` markers to ignore blocks of code
 
 ```Ruby
-# :nocov:
+# simplecov:disable
 def only_used_in_production
   something
 end
-# :nocov:
+# simplecov:enable
 ```
 
 Prevent addition of new uncovered code, without having to cover all existing code by marking how many lines are uncovered:

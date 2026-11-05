@@ -204,6 +204,54 @@ describe SingleCov do
         end
       end
 
+      describe "simplecov:disable" do
+        it "does not complain when inside block" do
+          change_file("lib/a.rb", "1", "1\n# simplecov:disable\ndef b\n2\nend\n# simplecov:enable") do
+            sh "ruby test/a_test.rb"
+          end
+        end
+
+        it "does not complain when inside block with categories and reason" do
+          change_file("lib/a.rb", "1", "1\n# simplecov:disable branch, method legacy\ndef b\n2\nend\n# simplecov:enable") do
+            sh "ruby test/a_test.rb"
+          end
+        end
+
+        it "does not complain when block is not closed" do
+          change_file("lib/a.rb", "1", "1\n# simplecov:disable\ndef b\n2\nend") do
+            sh "ruby test/a_test.rb"
+          end
+        end
+
+        it "does not complain when disabled inline" do
+          change_file("lib/a.rb", "1", "1 # simplecov:disable") do
+            sh "ruby test/a_test.rb"
+          end
+        end
+
+        it "complains when after block" do
+          change_file("lib/a.rb", "1", "1\n# simplecov:disable\n# simplecov:enable\ndef b\n2\nend") do
+            result = sh "ruby test/a_test.rb", fail: true
+            assert_tests_finished_normally(result)
+            expect(result).to include "uncovered"
+          end
+        end
+
+        it "complains when enable is used without disable" do
+          change_file("lib/a.rb", "1", "1\n# simplecov:enable\ndef b\n2\nend") do
+            result = sh "ruby test/a_test.rb", fail: true
+            assert_tests_finished_normally(result)
+            expect(result).to include "uncovered"
+          end
+        end
+
+        it "does not let :nocov: close a disable block" do
+          change_file("lib/a.rb", "1", "1\n# simplecov:disable\n# :nocov:\n# :nocov:\ndef b\n2\nend\n# simplecov:enable") do
+            sh "ruby test/a_test.rb"
+          end
+        end
+      end
+
       it "complains with minitest loaded before" do
         change_file("test/a_test.rb", "require 'single_cov'", "require 'minitest/autorun'; require 'single_cov'") do
           result = sh "ruby test/a_test.rb", fail: true
