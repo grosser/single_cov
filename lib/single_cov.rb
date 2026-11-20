@@ -142,13 +142,33 @@ module SingleCov
         (class << Minitest; self; end).prepend(Module.new do
           def run(args = [])
             original_args = args.dup # minitest modified them
+            SingleCov.instance_variable_set(:@minitest_run_wrapped, true)
             result = super
             if result && !SingleCov.send(:minitest_running_subset_of_tests?, original_args)
-              return SingleCov.report_at_exit
+              covered = SingleCov.report_at_exit
+              return covered.nil? ? result : covered # nil when disabled
             end
             result
           end
         end)
+
+        # setup ran inside of Minitest.run (rails 8.1+ loads tests in process_args), so the wrapper above is too late
+        if Minitest.respond_to?(:extensions)
+          Minitest.extensions << "single_cov" unless Minitest.extensions.include?("single_cov")
+          def Minitest.plugin_single_cov_init(options)
+            return if SingleCov.instance_variable_get(:@minitest_run_wrapped)
+
+            # minitest only asks once all tests finished, so interrupted runs are not reported
+            # hooks the composite since plugins like minitest-reporters replace its reporters
+            passed = nil
+            reporter.singleton_class.prepend(Module.new do
+              define_method(:passed?) do
+                passed = super() && SingleCov.send(:minitest_covered?, options) if passed.nil?
+                passed
+              end
+            end)
+          end
+        end
       else
         override_at_exit do |status, _exception|
           if main_process? && status == 0 && !report_at_exit
@@ -280,6 +300,13 @@ module SingleCov
       COVERAGES.size == 1
     end
 
+    def minitest_covered?(options)
+      return true if options[:filter] || options[:include] || options[:exclude] # MT 5 vs MT 6
+      return true if minitest_running_subset_of_tests?([])
+
+      report_at_exit != false # nil when disabled
+    end
+
     # do not record or verify when only running selected tests since it would be missing data
     def minitest_running_subset_of_tests?(argv)
       # via direct option (ruby test.rb -n /foo/)
@@ -295,6 +322,13 @@ module SingleCov
         Minitest.reporter &&
         (reporter = Minitest.reporter.reporters.first) &&
         (reporter.options[:filter] || reporter.options[:include]) # MT 5 vs MT 6
+      ) ||
+
+      # via rails 8.1+ test with line numbers, which rails filters itself
+      (
+        defined?(Rails::TestUnit::Runner) &&
+        Rails::TestUnit::Runner.respond_to?(:filters) &&
+        Rails::TestUnit::Runner.filters.any? { |_file, lines| lines.any? }
       )
     end
 
