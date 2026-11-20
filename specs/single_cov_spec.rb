@@ -33,6 +33,12 @@ describe SingleCov do
 
     it_does_not_complain_when_everything_is_covered
 
+    it "does not complain when everything is covered and rails loads tests from inside Minitest.run" do
+      result = sh "bin/rails_8_1 test test/a_test.rb"
+      assert_tests_finished_normally(result)
+      expect(result).to_not include "uncovered"
+    end
+
     it "is silent" do
       result = sh "ruby test/a_test.rb"
       assert_tests_finished_normally(result)
@@ -129,6 +135,20 @@ describe SingleCov do
         expect(result).to include message
       end
 
+      it "warns once with minitest loaded before" do
+        change_file("test/a_test.rb", "require 'single_cov'", "require 'minitest/autorun'; require 'single_cov'") do
+          result = sh "ruby test/a_test.rb"
+          assert_tests_finished_normally(result)
+          expect(result.scan("has less uncovered lines").size).to eq 1
+        end
+      end
+
+      it "warns once when rails loads tests from inside Minitest.run" do
+        result = sh "bin/rails_8_1 test test/a_test.rb"
+        assert_tests_finished_normally(result)
+        expect(result.scan("has less uncovered lines").size).to eq 1
+      end
+
       it "does not warn when running multiple files" do
         create_file 'test/b_test.rb', 'SingleCov.covered! file: "lib/a.rb"' do
           result = sh "ruby -r bundler/setup -r ./test/a_test.rb -r ./test/b_test.rb -e 1"
@@ -172,6 +192,63 @@ describe SingleCov do
         result = sh "bin/rails test test/a_test.rb:12"
         assert_tests_finished_normally(result)
         expect(result).to_not include "uncovered"
+      end
+
+      describe "when rails loads tests from inside Minitest.run" do
+        it "complains" do
+          result = sh "bin/rails_8_1 test test/a_test.rb", fail: true
+          assert_tests_finished_normally(result)
+          expect(result).to include "uncovered"
+        end
+
+        it "complains when another plugin replaces the reporters" do # like minitest-reporters
+          plugin = <<~RUBY
+            Minitest.extensions << "replace"
+            def Minitest.plugin_replace_init(options)
+              reporter.reporters = [Minitest::SummaryReporter.new(options[:io], options)]
+            end
+            SingleCov.covered!
+          RUBY
+          change_file("test/a_test.rb", "SingleCov.covered!", plugin) do
+            result = sh "bin/rails_8_1 test test/a_test.rb", fail: true
+            assert_tests_finished_normally(result)
+            expect(result).to include "uncovered"
+          end
+        end
+
+        it "does not complain when only running selected tests via name" do
+          result = sh "bin/rails_8_1 test test/a_test.rb -n /a/"
+          assert_tests_finished_normally(result)
+          expect(result).to_not include "uncovered"
+        end
+
+        it "does not complain when excluding tests" do
+          result = sh "bin/rails_8_1 test test/a_test.rb -e /nope/"
+          assert_tests_finished_normally(result)
+          expect(result).to_not include "uncovered"
+        end
+
+        it "does not complain when only running selected tests via line number" do
+          result = sh "bin/rails_8_1 test test/a_test.rb:22"
+          assert_tests_finished_normally(result)
+          expect(result).to_not include "uncovered"
+        end
+
+        it "does not complain when interrupted" do
+          change_file("test/a_test.rb", "assert", "raise Interrupt\n    assert") do
+            result = sh "bin/rails_8_1 test test/a_test.rb", fail: true
+            expect(result).to include "Interrupted"
+            expect(result).to_not include "uncovered"
+          end
+        end
+
+        it "does not complain when tests failed" do
+          change_file("test/a_test.rb", "assert", "refute") do
+            result = sh "bin/rails_8_1 test test/a_test.rb", fail: true
+            expect(result).to include "1 runs, 1 assertions, 1 failures"
+            expect(result).to_not include "uncovered"
+          end
+        end
       end
 
       it "does not complain when tests failed" do
@@ -257,6 +334,16 @@ describe SingleCov do
           result = sh "ruby test/a_test.rb", fail: true
           assert_tests_finished_normally(result)
           expect(result).to include "uncovered"
+        end
+      end
+
+      it "does not complain when disabled with minitest loaded before" do
+        change_file("test/a_test.rb", "require 'single_cov'", "require 'minitest/autorun'; require 'single_cov'") do
+          change_file("test/a_test.rb", "SingleCov.covered!", "SingleCov.covered!\nSingleCov.disable") do
+            result = sh "ruby test/a_test.rb"
+            assert_tests_finished_normally(result)
+            expect(result).to_not include "uncovered"
+          end
         end
       end
 
