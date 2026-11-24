@@ -582,6 +582,14 @@ describe SingleCov do
         expect(result).to include "uncovered"
       end
 
+      it "complains when minitest was loaded before" do
+        change_file("spec/a_spec.rb", "require 'single_cov'", "require 'minitest'\nrequire 'single_cov'") do
+          result = sh "bundle exec rspec spec/a_spec.rb", fail: true
+          assert_specs_finished_normally(result, 3)
+          expect(result).to include "uncovered"
+        end
+      end
+
       it "does not complains when running a subset of tests by line" do
         result = sh "bundle exec rspec spec/a_spec.rb:15"
         assert_specs_finished_normally(result, 1)
