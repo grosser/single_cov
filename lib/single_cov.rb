@@ -10,6 +10,16 @@ module SingleCov
   SIMPLECOV_ENABLE_BLOCK_MARKER = /^\s*#\s*simplecov:enable\b/
   PREFIXES_TO_IGNORE = [] # things to not prefix with lib/ etc
 
+  # fails the minitest run when coverage is missing
+  module MinitestReporter
+    attr_writer :single_cov_options
+
+    # minitest only calls this once all tests finished, so interrupted runs are not reported
+    def passed?
+      super && SingleCov.send(:minitest_report_passed?, @single_cov_options)
+    end
+  end
+
   class << self
     # enable coverage reporting: path to output file, changed by forking-test-runner at runtime to combine many reports
     attr_accessor :coverage_report
@@ -138,17 +148,13 @@ module SingleCov
 
       # minitest overrides at_exit, so we need to get into it to execute after it finishes
       # so when using the `minitest` executable or loading minitest before SingleCov the first branch is used
-      if defined?(Minitest)
-        (class << Minitest; self; end).prepend(Module.new do
-          def run(args = [])
-            original_args = args.dup # minitest modified them
-            result = super
-            if result && !SingleCov.send(:minitest_running_subset_of_tests?, original_args)
-              return SingleCov.report_at_exit
-            end
-            result
-          end
-        end)
+      if framework == :minitest && defined?(Minitest)
+        # a plugin since setup can run inside of Minitest.run (rails 8.1+ loads tests in process_args)
+        Minitest.extensions |= ["single_cov"]
+        def Minitest.plugin_single_cov_init(options)
+          # hooks the composite since plugins like minitest-reporters replace its reporters
+          reporter.extend(SingleCov::MinitestReporter).single_cov_options = options
+        end
       else
         override_at_exit do |status, _exception|
           if main_process? && status == 0 && !report_at_exit
@@ -280,8 +286,18 @@ module SingleCov
       COVERAGES.size == 1
     end
 
+    # @return [Boolean] false when coverage is missing
+    def minitest_report_passed?(options)
+      return true if minitest_running_subset_of_tests?(options[:args].to_s.split, options)
+
+      report_at_exit != false # nil when disabled
+    end
+
     # do not record or verify when only running selected tests since it would be missing data
-    def minitest_running_subset_of_tests?(argv)
+    def minitest_running_subset_of_tests?(argv, options = {})
+      # via parsed options (-n / -e), MT 5 vs MT 6
+      options[:filter] || options[:include] || options[:exclude] ||
+
       # via direct option (ruby test.rb -n /foo/)
       # or `minitest foo.rb:123` which is translated to -n
       argv.map { |a| a.split('=', 2).first }.intersect?(['-n', '--name', '-l', '--line']) ||
@@ -295,6 +311,13 @@ module SingleCov
         Minitest.reporter &&
         (reporter = Minitest.reporter.reporters.first) &&
         (reporter.options[:filter] || reporter.options[:include]) # MT 5 vs MT 6
+      ) ||
+
+      # via rails 8.1+ test with line numbers, which rails filters itself
+      (
+        defined?(Rails::TestUnit::Runner) &&
+        Rails::TestUnit::Runner.respond_to?(:filters) &&
+        Rails::TestUnit::Runner.filters.any? { |_file, lines| lines.any? }
       )
     end
 

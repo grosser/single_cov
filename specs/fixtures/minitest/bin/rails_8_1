@@ -1,0 +1,35 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+# rails 8.1+ `rails test` loads test files from inside Minitest.run (during process_args)
+# and keeps file:line filters to itself
+ARGV.shift # test
+
+require 'bundler/setup'
+require 'minitest'
+
+module Rails
+  module TestUnit
+    class Runner
+      def self.filters
+        @filters ||= []
+      end
+    end
+  end
+end
+
+files = ARGV.grep(/_test\.rb(:\d+)*\z/)
+ARGV.replace(ARGV - files)
+files.each do |arg|
+  file, *lines = arg.split(":")
+  Rails::TestUnit::Runner.filters << [file, lines.map(&:to_i)]
+end
+
+Minitest.singleton_class.prepend(Module.new do
+  define_method(:process_args) do |*args|
+    options = super(*args)
+    Rails::TestUnit::Runner.filters.map(&:first).each { |file| require File.expand_path(file) }
+    options
+  end
+end)
+
+Minitest.autorun
