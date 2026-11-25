@@ -3,6 +3,8 @@ require "bundler/setup"
 require "bundler/gem_tasks"
 require "bump/tasks"
 
+Bump.replace_in_default = Dir["gemfiles/*.lock"]
+
 task default: [:spec, :rubocop]
 
 task :spec do
